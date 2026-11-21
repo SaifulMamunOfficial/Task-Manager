@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AssignmentStatus {
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  IN_PROGRESS
+  BLOCKED
+  SUBMITTED
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  URGENT
+}
+
+enum VisibilityMode {
+  DIRECT
+  SUMMARY
+  FULL
+}
+
+enum VisibilityScope {
+  GLOBAL
+  POSITION
+  USER
+}
+
+enum UpdateType {
+  COMMENT
+  STATUS_CHANGE
+  PROGRESS
+}
+
+enum UnitType {
+  HEAD_OFFICE
+  UNIT
+}
+
+enum Platform {
+  IOS
+  ANDROID
+  WEB
+}
+
+// ---------- Organization ----------
+
+model Unit {
+  id           String         @id @default(cuid())
+  name         String
+  type         UnitType       @default(UNIT)
+  parentId     String?
+  parent       Unit?          @relation("UnitTree", fields: [parentId], references: [id])
+  children     Unit[]         @relation("UnitTree")
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  members      UserPosition[]
+  secretariats Secretariat[]
+}
+
+model Position {
+  id             String                 @id @default(cuid())
+  title          String                 @unique
+  level          Int                    @default(10)
+  members        UserPosition[]
+  canGiveTo      DelegationPermission[] @relation("FromPosition")
+  canReceiveFrom DelegationPermission[] @relation("ToPosition")
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  name               String
+  email              String   @unique
+  phone              String?
+  passwordHash       String
+  isActive           Boolean  @default(true)
+  // Dedicated admin account. Not part of the org hierarchy.
+  isAdmin            Boolean  @default(false)
+  mustChangePassword Boolean  @default(false)
+  notifyEmail        Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  positions       UserPosition[] @relation("PositionHolder")
+  reports         UserPosition[] @relation("ReportsTo")
+  secretariatsLed Secretariat[]
+
+  refreshTokens       RefreshToken[]
+  deviceTokens        DeviceToken[]
+  tasksCreated        Task[]
+  assignmentsReceived TaskAssignment[] @relation("Assignee")
+  assignmentsGiven    TaskAssignment[] @relation("Giver")
+  updates             TaskUpdate[]
+  notes               TaskNote[]
+  attachments         Attachment[]
+  notifications       Notification[]
+  auditEntries        AuditLog[]
+}
+
+// One row per (user, unit, position). A user may hold several positions.
+model UserPosition {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation("PositionHolder", fields: [userId], references: [id], onDelete: Cascade)
+  unitId          String
+  unit            Unit         @relation(fields: [unitId], references: [id])
+  positionId      String
+  position        Position     @relation(fields: [positionId], references: [id])
+  reportsToUserId String?
+  reportsTo       User?        @relation("ReportsTo", fields: [reportsToUserId], references: [id])
+  secretariatId   String?
+  secretariat     Secretariat? @relation(fields: [secretariatId], references: [id])
+  isPrimary       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  @@unique([userId, unitId, positionId])
+  @@index([unitId])
+  @@index([reportsToUserId])
+}
+
+model Secretariat {
+  id              String         @id @default(cuid())
+  name            String
+  unitId          String
+  unit            Unit           @relation(fields: [unitId], references: [id])
+  secretaryUserId String?
+  secretary       User?          @relation(fields: [secretaryUserId], references: [id])
+  members         UserPosition[]
+}
+
+// Which position may give tasks to which position.
+model DelegationPermission {
+  id             String   @id @default(cuid())
+  fromPositionId String
+  from           Position @relation("FromPosition", fields: [fromPositionId], references: [id], onDelete: Cascade)
+  toPositionId   String
+  to             Position @relation("ToPosition", fields: [toPositionId], references: [id], onDelete: Cascade)
+
+  @@unique([fromPositionId, toPositionId])
+}
+
+// scopeRefId is empty string for GLOBAL (keeps the unique constraint working in Postgres).
+model VisibilitySetting {
+  id         String          @id @default(cuid())
+  scope      VisibilityScope
+  scopeRefId String          @default("")
+  mode       VisibilityMode
+  updatedBy  String?
+  updatedAt  DateTime        @updatedAt
+
+  @@unique([scope, scopeRefId])
+}
+
+// ---------- Auth ----------
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  Platform
+  pushToken String   @unique
+  createdAt DateTime @default(now())
+}
+
+// ---------- Tasks (core logic arrives in the next step) ----------
+
+model Task {
+  id           String    @id @default(cuid())
+  parentTaskId String?
+  parent       Task?     @relation("SubTasks", fields: [parentTaskId], references: [id])
+  children     Task[]    @relation("SubTasks")
+  rootTaskId   String?
+  title        String
+  description  String?
+  priority     Priority  @default(NORMAL)
+  dueDate      DateTime?
+  createdById  String
+  createdBy    User      @relation(fields: [createdById], references: [id])
+  createdAt    DateTime  @default(now())
+  closedAt     DateTime?
+
+  assignments TaskAssignment[]
+  notes       TaskNote[]
+  attachments Attachment[]
+
+  @@index([parentTaskId])
+  @@index([rootTaskId])
+  @@index([createdById])
+}
+
+model TaskAssignment {
+  id                   String           @id @default(cuid())
+  taskId               String
+  task                 Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assigneeId           String
+  assignee             User             @relation("Assignee", fields: [assigneeId], references: [id])
+  assigneePositionId   String?
+  assignedById         String
+  assignedBy           User             @relation("Giver", fields: [assignedById], references: [id])
+  assignedByPositionId String?
+  status               AssignmentStatus @default(PENDING_ACCEPTANCE)
+  progressPercent      Int              @default(0)
+  acceptedAt           DateTime?
+  submittedAt          DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  updates TaskUpdate[]
+
+  @@unique([taskId, assigneeId])
+  @@index([assigneeId, status])
+  @@index([assignedById])
+}
+
+model TaskUpdate {
+  id           String         @id @default(cuid())
+  assignmentId String
+  assignment   TaskAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  type         UpdateType
+  body         String?
+  meta         Json?
+  createdAt    DateTime       @default(now())
+  attachments  Attachment[]
+
+  @@index([assignmentId])
+}
+
+model TaskNote {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Attachment {
+  id           String      @id @default(cuid())
+  taskId       String?
+  task         Task?       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  updateId     String?
+  update       TaskUpdate? @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  fileKey      String
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  uploadedById String
+  uploadedBy   User        @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime    @default(now())
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json
+  readAt    DateTime?
+  emailedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+model ReminderRule {
+  id      String  @id @default(cuid())
+  key     String  @unique
+  enabled Boolean @default(true)
+  config  Json
+}
+
+// One row per reminder already sent. The unique key makes each reminder fire exactly once,
+// even if the API runs as several instances or restarts mid-tick.
+model ReminderLog {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}

@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Task Manager",
+    "slug": "task-manager",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": false, "bundleIdentifier": "org.example.taskmanager" },
+    "android": { "package": "org.example.taskmanager" }
+  }
+}
