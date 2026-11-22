@@ -1,84 +1,120 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Button, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { api } from './src/api';
+import { AuthProvider, useAuth } from './src/auth';
+import { I18nProvider, useI18n } from './src/i18n';
+import { onNotificationTap } from './src/push';
+import { C } from './src/ui';
+import Login from './src/screens/Login';
+import ChangePassword from './src/screens/ChangePassword';
+import Today from './src/screens/Today';
+import TaskList from './src/screens/TaskList';
+import TaskDetail from './src/screens/TaskDetail';
+import NewTask from './src/screens/NewTask';
+import Notifications from './src/screens/Notifications';
+import Account from './src/screens/Account';
 
-// Use your computer's LAN IP when testing on a real phone, e.g. http://192.168.0.10:4000/api
-const BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:4000/api';
+const navRef = createNavigationContainerRef<any>();
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-type Me = { id: string; name: string; positions: { id: string; unit: { name: string }; position: { title: string } }[] };
+const MineScreen = () => <TaskList who="mine" />;
+const GivenScreen = () => <TaskList who="given" />;
+const ForcedPassword = () => <ChangePassword forced />;
 
-async function call(path: string, init: RequestInit = {}, token?: string) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-  });
-  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? `HTTP ${res.status}`);
-  return res.json();
-}
+function Tabs() {
+  const { t } = useI18n();
+  const { canGive } = useAuth();
+  const [unread, setUnread] = useState(0);
 
-export default function App() {
-  const [me, setMe] = useState<Me | null>(null);
-  const [busy, setBusy] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
+  // A light poll keeps the bell badge current while the app is open.
   useEffect(() => {
-    (async () => {
-      try {
-        const token = await SecureStore.getItemAsync('at');
-        if (token) setMe(await call('/auth/me', {}, token));
-      } catch {
-        await SecureStore.deleteItemAsync('at');
-      }
-      setBusy(false);
-    })();
+    let live = true;
+    const tick = () => api<unknown[]>('/notifications?unread=true').then((r) => live && setUnread(r.length)).catch(() => {});
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
   }, []);
 
-  async function login() {
-    setError('');
-    try {
-      const r = await call('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-      await SecureStore.setItemAsync('at', r.accessToken);
-      await SecureStore.setItemAsync('rt', r.refreshToken);
-      setMe(r.user);
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  if (busy) return <ActivityIndicator style={{ flex: 1 }} />;
+  const newBtn = canGive
+    ? () => (
+        <Pressable onPress={() => navRef.current?.navigate('NewTask')} accessibilityRole="button" accessibilityLabel={t('nav.newTask')} style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
+          <Text style={{ color: C.brand, fontWeight: '800', fontSize: 15 }}>+ {t('nav.newTask')}</Text>
+        </Pressable>
+      )
+    : undefined;
 
   return (
-    <SafeAreaView style={s.screen}>
-      <StatusBar style="auto" />
-      {!me ? (
-        <View style={s.card}>
-          <Text style={s.h1}>Task Manager</Text>
-          <TextInput style={s.input} placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-          <TextInput style={s.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
-          <Button title="Sign in" onPress={login} />
-          {!!error && <Text style={s.err}>{error}</Text>}
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={s.card}>
-          <Text style={s.h1}>Hello, {me.name}</Text>
-          {me.positions.map((p) => (
-            <Text key={p.id}>{p.position.title}, {p.unit.name}</Text>
-          ))}
-          <Text style={{ color: '#666', marginTop: 12 }}>Foundation shell. Task screens come next.</Text>
-          <Button title="Sign out" onPress={async () => { await SecureStore.deleteItemAsync('at'); await SecureStore.deleteItemAsync('rt'); setMe(null); }} />
-        </ScrollView>
-      )}
-    </SafeAreaView>
+    <Tab.Navigator screenOptions={{ tabBarActiveTintColor: C.brand, headerTitleStyle: { fontWeight: '800' }, tabBarLabelStyle: { fontSize: 11.5, fontWeight: '600' } }}>
+      <Tab.Screen name="Today" component={Today} options={{ title: t('nav.today'), tabBarIcon: () => <Text>◉</Text> }} />
+      <Tab.Screen name="Mine" component={MineScreen} options={{ title: t('nav.myTasks'), headerRight: newBtn, tabBarIcon: () => <Text>☑</Text> }} />
+      <Tab.Screen name="Given" component={GivenScreen} options={{ title: t('nav.given'), headerRight: newBtn, tabBarIcon: () => <Text>➤</Text> }} />
+      <Tab.Screen name="Notifications" component={Notifications} options={{ title: t('nav.notifications'), tabBarBadge: unread > 0 ? unread : undefined, tabBarIcon: () => <Text>🔔</Text> }} />
+      <Tab.Screen name="Account" component={Account} options={{ title: t('mb.me'), tabBarIcon: () => <Text>●</Text> }} />
+    </Tab.Navigator>
   );
 }
 
-const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#f6f7f9', justifyContent: 'center' },
-  card: { margin: 16, padding: 20, backgroundColor: '#fff', borderRadius: 12, gap: 12 },
-  h1: { fontSize: 22, fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10 },
-  err: { color: '#b00020' },
-});
+function Root() {
+  const { me, ready } = useAuth();
+  const { t } = useI18n();
+
+  // Tapping a push notification opens that task.
+  const pending = useRef<string | null>(null);
+  useEffect(() => onNotificationTap((id) => (navRef.isReady() ? navRef.navigate('TaskDetail', { id }) : (pending.current = id))), []);
+
+  if (!ready) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" color={C.brand} /></View>;
+
+  return (
+    <NavigationContainer
+      ref={navRef}
+      onReady={() => {
+        if (pending.current) navRef.navigate('TaskDetail', { id: pending.current });
+        pending.current = null;
+      }}
+    >
+      <StatusBar style="dark" />
+      {!me ? (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={Login} />
+        </Stack.Navigator>
+      ) : me.mustChangePassword ? (
+        <Stack.Navigator>
+          <Stack.Screen name="ForcedPassword" component={ForcedPassword} options={{ title: t('nav.changePassword') }} />
+        </Stack.Navigator>
+      ) : me.isAdmin ? (
+        <Stack.Navigator>
+          <Stack.Screen name="Account" component={Account} options={{ title: t('app.name') }} />
+          <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ title: t('nav.changePassword') }} />
+        </Stack.Navigator>
+      ) : (
+        <Stack.Navigator>
+          <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+          <Stack.Screen name="TaskDetail" component={TaskDetail} options={{ title: t('tl.task') }} />
+          <Stack.Screen name="NewTask" component={NewTask} options={{ title: t('nw.title') }} />
+          <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ title: t('nav.changePassword') }} />
+        </Stack.Navigator>
+      )}
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <I18nProvider>
+          <Root />
+        </I18nProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+}

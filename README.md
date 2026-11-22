@@ -64,3 +64,15 @@ Admin sets these up in the web app under **Admin > Email & push**; no restart or
 - **Phone push:** switch on "Phones"; the Expo mobile app registers its device token (mobile app not built yet).
 - Passwords, the VAPID private key and the Expo token are encrypted (AES-256-GCM) in the database and are never sent back to the browser or written to the audit log. Set `SETTINGS_ENCRYPTION_KEY` in production (otherwise `JWT_ACCESS_SECRET` is used); changing it later makes saved secrets unreadable.
 - Not tested against a real SMTP provider or a real browser push service; tested with a local SMTP sink and a fake push endpoint.
+
+## Mobile app (Expo, apps/mobile)
+
+Native app for staff (Android and iOS) using the same API. Screens: sign in, Today, My tasks, Assigned by me (accept, decline, approve, send back right from the list), task detail (status changes, progress, comments, file upload and download), new task, notifications, account (language, email and push settings, change password, sign out). English and Bangla like the website.
+
+- It is outside the npm workspaces. Install with `cd apps/mobile && npm install --legacy-peer-deps --workspaces=false`.
+- UI text is copied from the website: run `node scripts/sync-locales.mjs` after changing `apps/web/locales`. Phone-only text lives in `src/locales/mobile.ts`.
+- Point it at the API: `EXPO_PUBLIC_API_URL=http://<your computer's LAN IP>:4000/api npx expo start` (Android emulator default is `10.0.2.2`).
+- Push on a phone needs an Expo project id (`extra.eas.projectId` in `app.json`, from `eas init`) and a development or store build; Expo Go cannot receive remote push on recent Android versions.
+- The administrator account is managed on the website; on the phone it only shows the account screen.
+- Not built yet: delegating a task onward from the phone, private notes, and the admin screens.
+- Checked: typecheck and an Android bundle build. Not yet run on a phone or emulator.
