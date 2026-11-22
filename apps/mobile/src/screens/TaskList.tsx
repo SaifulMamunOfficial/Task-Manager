@@ -159,14 +159,14 @@ export default function TaskList({ who }: { who: Who }) {
                 </View>
                 {who === 'mine' && a.status === 'PENDING_ACCEPTANCE' && (
                   <View style={s.acts}>
-                    <Btn label={t('act.ACCEPTED')} kind="primary" icon="checkmark" busy={busyId === a.id} onPress={() => move(a, 'ACCEPTED').catch((e) => setError(err(e.message)))} style={{ flex: 1 }} />
-                    <Btn label={t('act.DECLINED')} onPress={() => setDecline(a)} style={{ flex: 1 }} />
+                    <Btn label={t('mb.acceptShort')} kind="primary" compact busy={busyId === a.id} onPress={() => move(a, 'ACCEPTED').catch((e) => setError(err(e.message)))} style={{ minWidth: 92 }} />
+                    <Btn label={t('mb.declineShort')} compact onPress={() => setDecline(a)} style={{ minWidth: 92 }} />
                   </View>
                 )}
                 {who === 'given' && a.status === 'SUBMITTED' && (
                   <View style={s.acts}>
-                    <Btn label={t('act.APPROVED')} kind="primary" icon="checkmark-done" busy={busyId === a.id} onPress={() => move(a, 'APPROVED').catch((e) => setError(err(e.message)))} style={{ flex: 1 }} />
-                    <Btn label={t('act.sendBack')} onPress={() => setSendBack(a)} style={{ flex: 1 }} />
+                    <Btn label={t('mb.approveShort')} kind="primary" compact busy={busyId === a.id} onPress={() => move(a, 'APPROVED').catch((e) => setError(err(e.message)))} style={{ minWidth: 92 }} />
+                    <Btn label={t('act.sendBack')} compact onPress={() => setSendBack(a)} style={{ minWidth: 92 }} />
                   </View>
                 )}
               </View>

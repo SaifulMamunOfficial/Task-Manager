@@ -73,7 +73,7 @@ export function Progress({ value }: { value: number }) {
   );
 }
 
-export function Btn({ label, onPress, kind = 'default', disabled, busy, style, icon }: { label: string; onPress: () => void; kind?: 'primary' | 'default' | 'danger'; disabled?: boolean; busy?: boolean; style?: StyleProp<ViewStyle>; icon?: IconName }) {
+export function Btn({ label, onPress, kind = 'default', disabled, busy, style, icon, compact }: { label: string; onPress: () => void; kind?: 'primary' | 'default' | 'danger'; disabled?: boolean; busy?: boolean; style?: StyleProp<ViewStyle>; icon?: IconName; compact?: boolean }) {
   const bg = kind === 'primary' ? C.brand : kind === 'danger' ? C.redSoft : C.card;
   const fg = kind === 'primary' ? '#fff' : kind === 'danger' ? C.red : C.ink;
   const off = disabled || busy;
@@ -83,14 +83,14 @@ export function Btn({ label, onPress, kind = 'default', disabled, busy, style, i
       accessibilityState={{ disabled: !!off, busy: !!busy }}
       disabled={off}
       onPress={onPress}
-      style={({ pressed }) => [s.btn, { backgroundColor: bg, borderColor: kind === 'primary' ? C.brand : kind === 'danger' ? '#fecaca' : C.line, opacity: off ? 0.5 : pressed ? 0.88 : 1 }, kind === 'primary' && SH, style]}
+      style={({ pressed }) => [s.btn, compact && { minHeight: 34, paddingHorizontal: 14, borderRadius: 10 }, { backgroundColor: bg, borderColor: kind === 'primary' ? C.brand : kind === 'danger' ? '#fecaca' : C.line, opacity: off ? 0.5 : pressed ? 0.88 : 1 }, kind === 'primary' && SH, style]}
     >
       {busy ? (
         <ActivityIndicator color={fg} />
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {!!icon && <Icon name={icon} size={18} color={fg} />}
-          <Text style={[s.btnText, { color: fg }]}>{label}</Text>
+          <Text style={[s.btnText, compact && { fontSize: 13.5 }, { color: fg }]}>{label}</Text>
         </View>
       )}
     </Pressable>

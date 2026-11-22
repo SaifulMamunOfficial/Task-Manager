@@ -110,11 +110,12 @@ export default function Today() {
         </Pressable>
         {action && (
           <Btn
-            label={t(action === 'accept' ? 'act.ACCEPTED' : 'act.APPROVED')}
+            label={t(action === 'accept' ? 'mb.acceptShort' : 'mb.approveShort')}
             kind="primary"
+            compact
             busy={busyId === a.id}
             onPress={() => move(a, action === 'accept' ? 'ACCEPTED' : 'APPROVED')}
-            style={{ minHeight: 40, paddingHorizontal: 14 }}
+            style={{ minWidth: 78 }}
           />
         )}
       </View>

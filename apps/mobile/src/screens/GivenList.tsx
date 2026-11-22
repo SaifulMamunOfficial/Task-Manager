@@ -166,8 +166,8 @@ export default function GivenList() {
                       </Pressable>
                       {a.status === 'SUBMITTED' && (
                         <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 10 }}>
-                          <Btn label={t('act.APPROVED')} kind="primary" icon="checkmark-done" busy={busyId === a.id} onPress={() => move(a, 'APPROVED').catch((e) => setError(err(e.message)))} style={{ flex: 1, minHeight: 40 }} />
-                          <Btn label={t('act.sendBack')} onPress={() => setSendBack(a)} style={{ flex: 1, minHeight: 40 }} />
+                          <Btn label={t('mb.approveShort')} kind="primary" compact busy={busyId === a.id} onPress={() => move(a, 'APPROVED').catch((e) => setError(err(e.message)))} style={{ minWidth: 92 }} />
+                          <Btn label={t('act.sendBack')} compact onPress={() => setSendBack(a)} style={{ minWidth: 92 }} />
                         </View>
                       )}
                     </View>
