@@ -7,3 +7,5 @@ Waiting on http://localhost:8081
 Logs for your project will appear below.
 Android node_modules\expo\AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
 Android Bundled 519ms node_modules\expo\AppEntry.js (1033 modules)
+Android node_modules\expo\AppEntry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 25ms node_modules\expo\AppEntry.js (1 module)

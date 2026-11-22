@@ -539,3 +539,10 @@ html[lang='bn'] body { line-height: 1.6; }
 [data-theme='dark'] .cline.seen { background: #4338ca; }
 [data-theme='dark'] .vcard:hover { border-color: #475569; }
 [data-theme='dark'] input[type=file]::file-selector-button { background: var(--surface-2); }
+
+/* ---------- theme toggle button ---------- */
+.theme-btn { width: 34px; height: 34px; padding: 0; display: inline-grid; place-items: center; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-2); flex-shrink: 0; }
+.theme-btn:hover { background: var(--surface-2); }
+.theme-btn.on-dark { margin-left: auto; background: transparent; border-color: #1e293b; color: #94a3b8; }
+.theme-btn.on-dark:hover { background: var(--sidebar-2); color: #fff; border-color: #334155; }
+.auth-lang { display: flex; align-items: center; gap: 10px; }

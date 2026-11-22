@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { useI18n } from './i18n';
+import { Icon } from '../components/icons';
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -54,5 +55,27 @@ export function ThemeSwitch() {
         </button>
       ))}
     </div>
+  );
+}
+
+/** One-tap sun / moon button, always visible. Switches between Light and Dark (Auto stays available in the account menu). */
+export function ThemeToggle({ className = '' }: { className?: string }) {
+  const { t } = useI18n();
+  const { setTheme } = useTheme();
+  const [dark, setDark] = useState(false);
+
+  // Follow the real theme on the page (it may come from "Auto" or the device).
+  useEffect(() => {
+    const read = () => setDark(document.documentElement.dataset.theme === 'dark');
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <button type="button" className={`theme-btn ${className}`} aria-label={t(dark ? 'th.toLight' : 'th.toDark')} title={t(dark ? 'th.toLight' : 'th.toDark')} onClick={() => setTheme(dark ? 'light' : 'dark')}>
+      <Icon name={dark ? 'sun' : 'moon'} size={18} />
+    </button>
   );
 }

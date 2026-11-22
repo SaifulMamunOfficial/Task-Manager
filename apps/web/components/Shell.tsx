@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { LangSwitch, useI18n } from '../lib/i18n';
-import { ThemeSwitch } from '../lib/theme';
+import { ThemeSwitch, ThemeToggle } from '../lib/theme';
 import { Avatar } from './bits';
 import { Icon, type IconName } from './icons';
 
@@ -120,6 +120,7 @@ export default function Shell({ children }: { children: ReactNode }) {
         <div className="brand">
           <span className="brand-mark"><Icon name="check" size={18} /></span>
           {t('app.name')}
+          <ThemeToggle className="on-dark" />
         </div>
         {!locked && !me.isAdmin && canGive && (
           <Link href="/new" className="btn primary side-new">
@@ -185,13 +186,16 @@ export default function Shell({ children }: { children: ReactNode }) {
             <Icon name={open ? 'close' : 'menu'} size={20} />
           </button>
           <strong>{t('app.name')}</strong>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <ThemeToggle />
           {!locked && !me.isAdmin && canGive ? (
             <Link href="/new" className="btn primary" aria-label={t('nav.newTask')} style={{ padding: '0 10px' }}>
               <Icon name="plus" size={18} />
             </Link>
           ) : (
-            <span style={{ width: 38 }} />
+            <span style={{ width: 4 }} />
           )}
+          </span>
         </div>
         <main className="page">{children}</main>
       </div>

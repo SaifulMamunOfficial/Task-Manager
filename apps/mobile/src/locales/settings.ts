@@ -6,6 +6,8 @@ export const settings: Record<string, [string, string]> = {
 
   // theme
   'th.label': ['Theme', 'থিম'],
+  'th.toDark': ['Switch to dark mode', 'গাঢ় থিমে যান'],
+  'th.toLight': ['Switch to light mode', 'হালকা থিমে যান'],
   'th.system': ['Auto', 'অটো'],
   'th.light': ['Light', 'হালকা'],
   'th.dark': ['Dark', 'গাঢ়'],

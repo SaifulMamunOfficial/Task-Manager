@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../lib/auth';
 import { LangSwitch, useI18n } from '../../lib/i18n';
+import { ThemeToggle } from '../../lib/theme';
 import { Err } from '../../components/bits';
 import { Icon } from '../../components/icons';
 
@@ -33,7 +34,7 @@ export default function Login() {
 
   return (
     <div className="auth" style={{ position: 'relative' }}>
-      <div className="auth-lang"><LangSwitch /></div>
+      <div className="auth-lang"><ThemeToggle /><LangSwitch /></div>
       <section className="auth-brand">
         <div className="brand" style={{ padding: 0 }}>
           <span className="brand-mark"><Icon name="check" size={18} /></span> {t('app.name')}
