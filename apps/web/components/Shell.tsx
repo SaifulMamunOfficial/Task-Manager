@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { LangSwitch, useI18n } from '../lib/i18n';
+import { ThemeSwitch } from '../lib/theme';
 import { Avatar } from './bits';
 import { Icon, type IconName } from './icons';
 
@@ -146,6 +147,10 @@ export default function Shell({ children }: { children: ReactNode }) {
               <div className="acct-lang">
                 <span>{t('c.langLabel')}</span>
                 <LangSwitch compact />
+              </div>
+              <div className="acct-lang">
+                <span>{t('th.label')}</span>
+                <ThemeSwitch />
               </div>
               {!locked && (
                 <Link href="/account" className="acct-item" role="menuitem">

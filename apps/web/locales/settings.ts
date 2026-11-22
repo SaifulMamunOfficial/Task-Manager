@@ -4,6 +4,12 @@ export const settings: Record<string, [string, string]> = {
   'nav.account': ['Notification settings', 'বিজ্ঞপ্তির সেটিং'],
   'nav.notifSettings': ['Email & push', 'ইমেইল ও পুশ'],
 
+  // theme
+  'th.label': ['Theme', 'থিম'],
+  'th.system': ['Auto', 'অটো'],
+  'th.light': ['Light', 'হালকা'],
+  'th.dark': ['Dark', 'গাঢ়'],
+
   // each person's own page
   'ac.title': ['Notification settings', 'বিজ্ঞপ্তির সেটিং'],
   'ac.sub': ['Choose how you want to be told about new tasks and reminders. They always appear inside the app.', 'নতুন কাজ ও অনুস্মারকের খবর আপনি কীভাবে পেতে চান বেছে নিন। অ্যাপের ভেতরে সেগুলো সবসময় দেখা যাবে।'],
