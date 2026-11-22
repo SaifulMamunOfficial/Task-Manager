@@ -44,3 +44,23 @@ Official MinIO Docker images are no longer published, so local dev uses a frozen
 (no security updates, dev only). The API talks plain S3, so for production point `S3_*` env vars at any maintained
 S3-compatible store (Coolify's S3 storage, Garage, SeaweedFS, or a cloud bucket). Do not expose the storage port publicly:
 downloads go through the API, which checks permissions.
+
+## Languages (English and Bangla)
+
+The web UI works in English and Bangla. Each person has a saved language (default Bangla) and can switch it in the sidebar or on the sign-in page. With Bangla selected, numbers and dates use Bangla digits.
+
+- UI text lives in `apps/web/locales/*.ts` as `'key': ['English', 'বাংলা']` pairs. Run `node apps/web/scripts/check-i18n.mjs` to check that every key used in code exists and both languages are filled.
+- Position names have an English and a Bangla title (set under Admin > Organization). People see the one for their language.
+- Reminders are stored as a type plus data and written in the reader's language when shown. Reminder emails use the recipient's language.
+- Error messages from the API are English; the web app translates the known ones (`apps/web/locales/errors.ts`).
+- Not yet translated: unit and secretariat names (admin types one name), and the Expo mobile shell.
+
+## Email and push notifications
+
+Admin sets these up in the web app under **Admin > Email & push**; no restart or `.env` edit is needed. People choose their own channels under **Account menu > Notification settings**. In-app notifications always work.
+
+- **Email (SMTP):** enter host, port, user, password and sender, press Save, then "Send test email". Gmail needs an app password. Values saved here win over the `SMTP_*` variables in `.env`, which still work as a fallback.
+- **Browser push:** press "Create keys" once (VAPID), set a contact (`mailto:you@example.com`), switch it on. Each person then turns it on for their own browser. Browsers only allow push on **HTTPS** (or localhost), so production needs your Coolify domain with TLS. Creating new keys disconnects every registered browser.
+- **Phone push:** switch on "Phones"; the Expo mobile app registers its device token (mobile app not built yet).
+- Passwords, the VAPID private key and the Expo token are encrypted (AES-256-GCM) in the database and are never sent back to the browser or written to the audit log. Set `SETTINGS_ENCRYPTION_KEY` in production (otherwise `JWT_ACCESS_SECRET` is used); changing it later makes saved secrets unreadable.
+- Not tested against a real SMTP provider or a real browser push service; tested with a local SMTP sink and a fake push endpoint.

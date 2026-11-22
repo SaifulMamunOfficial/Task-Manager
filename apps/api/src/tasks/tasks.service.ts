@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { AssignmentStatus, Prisma, Priority, UpdateType } from '@prisma/client';
+import { AssignmentStatus, Notification, Prisma, Priority, UpdateType } from '@prisma/client';
+import { NotifyService } from '../notify/notify.service';
 import { ASSIGNEE_TRANSITIONS, GIVER_TRANSITIONS, resolveVisibilityMode } from '@tm/shared';
 import { PrismaService } from '../prisma/prisma.module';
 import { AuditService } from '../common/audit.module';
@@ -22,12 +23,14 @@ export class TasksService {
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,
+    private notifier: NotifyService,
   ) {}
 
   // ---------- helpers ----------
 
-  private notify(userId: string, type: string, payload: Prisma.InputJsonValue, tx: Prisma.TransactionClient | PrismaService = this.prisma) {
-    return tx.notification.create({ data: { userId, type, payload } });
+  /** Saves the notification inside the transaction; it is sent (push/email) after the transaction commits. */
+  private async notify(userId: string, type: string, payload: Prisma.InputJsonValue, tx: Prisma.TransactionClient, out: Notification[]) {
+    out.push(await this.notifier.create(userId, type, payload, tx));
   }
 
   private async assertNotAdmin(me: AuthUser) {
@@ -92,6 +95,7 @@ export class TasksService {
     if (!title) throw new BadRequestException('Title is required');
     const dueDate = input.dueDate ? new Date(input.dueDate) : parent?.dueDate ?? null;
 
+    const out: Notification[] = [];
     const task = await this.prisma.$transaction(async (tx) => {
       const t = await tx.task.create({
         data: {
@@ -108,13 +112,14 @@ export class TasksService {
       if (!parent) await tx.task.update({ where: { id: t.id }, data: { rootTaskId: t.id } });
       for (const id of ids) {
         const pair = pairs.get(id)!;
-        await tx.taskAssignment.create({
+        const asg = await tx.taskAssignment.create({
           data: { taskId: t.id, assigneeId: id, assignedById: me.id, assignedByPositionId: pair.from, assigneePositionId: pair.to },
         });
-        await this.notify(id, 'TASK_ASSIGNED', { taskId: t.id, title, byUserId: me.id, priority: t.priority, dueDate }, tx);
+        await this.notify(id, 'TASK_ASSIGNED', { assignmentId: asg.id, taskId: t.id, title, byUserId: me.id, priority: t.priority, dueDate }, tx, out);
       }
       return t;
     });
+    this.notifier.dispatchAll(out);
     await this.audit.log(me.id, parent ? 'DELEGATE' : 'CREATE', 'Task', task.id, undefined, { title, assigneeIds: ids, parentTaskId: parent?.taskId });
     return this.prisma.task.findUniqueOrThrow({
       where: { id: task.id },
@@ -274,18 +279,20 @@ export class TasksService {
     }
 
     const other = role === 'assignee' ? a.assignedById : a.assigneeId;
+    const out: Notification[] = [];
     await this.prisma.$transaction(async (tx) => {
       await tx.taskAssignment.update({ where: { id }, data });
       await tx.taskUpdate.create({
         data: { assignmentId: id, userId: me.id, type: UpdateType.STATUS_CHANGE, body: comment?.trim() || null, meta: { from: a.status, to } },
       });
-      await this.notify(other, 'STATUS_CHANGED', { assignmentId: id, taskId: a.taskId, title: a.task.title, from: a.status, to, byUserId: me.id }, tx);
+      await this.notify(other, 'STATUS_CHANGED', { assignmentId: id, taskId: a.taskId, title: a.task.title, from: a.status, to, byUserId: me.id }, tx, out);
       // Close the task when every assignment is finished.
       if (to === 'APPROVED' || to === 'CANCELLED') {
         const remaining = await tx.taskAssignment.count({ where: { taskId: a.taskId, status: { in: OPEN.concat('DECLINED') } } });
         if (remaining === 0) await tx.task.update({ where: { id: a.taskId }, data: { closedAt: now } });
       }
     });
+    this.notifier.dispatchAll(out);
     await this.audit.log(me.id, 'STATUS', 'TaskAssignment', id, { status: a.status }, { status: to });
     return this.detail(id, me);
   }
@@ -302,6 +309,7 @@ export class TasksService {
       }
     }
     const other = role === 'assignee' ? a.assignedById : a.assigneeId;
+    const out: Notification[] = [];
     await this.prisma.$transaction(async (tx) => {
       if (progressPercent !== undefined) {
         await tx.taskAssignment.update({
@@ -318,8 +326,9 @@ export class TasksService {
           meta: progressPercent !== undefined ? { progressPercent } : undefined,
         },
       });
-      await this.notify(other, 'UPDATE_POSTED', { assignmentId: id, taskId: a.taskId, title: a.task.title, byUserId: me.id, progressPercent: progressPercent ?? null }, tx);
+      await this.notify(other, 'UPDATE_POSTED', { assignmentId: id, taskId: a.taskId, title: a.task.title, byUserId: me.id, progressPercent: progressPercent ?? null }, tx, out);
     });
+    this.notifier.dispatchAll(out);
     return this.detail(id, me);
   }
 

@@ -3,25 +3,12 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { useI18n } from '../../lib/i18n';
 import { OPEN, isOverdue } from '../../lib/ui';
 import { Empty, Err, GroupHead, ListHead, PageHead, Skeleton, TaskRow } from '../../components/bits';
 import { Icon } from '../../components/icons';
 
-const FILTERS = [
-  { key: 'open', label: 'Open' },
-  { key: 'overdue', label: 'Overdue' },
-  { key: 'today', label: 'Due today' },
-  { key: 'week', label: 'This week' },
-  { key: 'closed', label: 'Closed' },
-];
-
-const EMPTY_TEXT: Record<string, { title: string; text: string }> = {
-  open: { title: 'No open tasks', text: 'You are all caught up. New tasks will appear here.' },
-  overdue: { title: 'Nothing is overdue', text: 'Every open task is within its deadline.' },
-  today: { title: 'Nothing due today', text: 'No open task has a deadline today.' },
-  week: { title: 'Nothing due this week', text: 'No open task has a deadline in the next 7 days.' },
-  closed: { title: 'No closed tasks yet', text: 'Tasks you finish, decline or that are cancelled will be listed here.' },
-};
+const FILTERS = ['open', 'overdue', 'today', 'week', 'closed'];
 
 const endOfDay = (offset: number) => {
   const d = new Date();
@@ -53,17 +40,18 @@ function bucket(a: any): string {
 }
 
 const SECTIONS: { key: string; title: string; tone?: 'late' }[] = [
-  { key: 'accept', title: 'Waiting for you to accept' },
-  { key: 'overdue', title: 'Overdue', tone: 'late' },
-  { key: 'today', title: 'Due today' },
-  { key: 'week', title: 'This week' },
-  { key: 'later', title: 'Later' },
-  { key: 'none', title: 'No deadline' },
-  { key: 'submitted', title: 'Submitted, waiting for approval' },
+  { key: 'accept', title: 'dk.gAccept' },
+  { key: 'overdue', title: 'dk.gOverdue', tone: 'late' },
+  { key: 'today', title: 'dk.gToday' },
+  { key: 'week', title: 'f.week' },
+  { key: 'later', title: 'mt.s.later' },
+  { key: 'none', title: 'due.none' },
+  { key: 'submitted', title: 'mt.s.submitted' },
 ];
 
 export default function MyTasks() {
   const { canGive } = useAuth();
+  const { t, n, err } = useI18n();
   const [all, setAll] = useState<any[] | null>(null);
   const [filter, setFilter] = useState('open');
   const [q, setQ] = useState('');
@@ -72,7 +60,7 @@ export default function MyTasks() {
 
   useEffect(() => {
     const f = new URLSearchParams(window.location.search).get('f');
-    if (f && FILTERS.some((x) => x.key === f)) setFilter(f);
+    if (f && FILTERS.includes(f)) setFilter(f);
   }, []);
 
   const load = useCallback(() => {
@@ -80,7 +68,7 @@ export default function MyTasks() {
   }, []);
   useEffect(load, [load]);
 
-  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.key, (all ?? []).filter((a) => matches(a, f.key)).length])), [all]);
+  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f, (all ?? []).filter((a) => matches(a, f)).length])), [all]);
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -93,23 +81,26 @@ export default function MyTasks() {
   const grouped = sort === 'due' && filter !== 'closed';
   const sections = grouped ? SECTIONS.map((s) => ({ ...s, rows: list.filter((a) => bucket(a) === s.key) })).filter((s) => s.rows.length > 0) : [];
 
-  const subtitle = all === null ? 'Everything that has been given to you.' : counts.open === 0 ? 'Everything that has been given to you.' : `${counts.open} open${counts.overdue ? ` · ${counts.overdue} overdue` : ''}${counts.today ? ` · ${counts.today} due today` : ''}`;
+  const subtitle =
+    all === null || counts.open === 0
+      ? t('mt.sub')
+      : [t('mt.open', { n: counts.open }), counts.overdue ? t('mt.overdue', { n: counts.overdue }) : '', counts.today ? t('mt.dueToday', { n: counts.today }) : ''].filter(Boolean).join(' · ');
   const neverHadTasks = all !== null && all.length === 0;
 
   return (
     <>
-      <PageHead title="My tasks" subtitle={subtitle} />
-      <Err msg={error} />
+      <PageHead title={t('mt.title')} subtitle={subtitle} />
+      <Err msg={error ? err(error) : ''} />
 
       {all === null && !error && <Skeleton />}
 
       {neverHadTasks && (
         <Empty
-          title="No tasks yet"
+          title={t('mt.never')}
           icon="inbox"
-          actions={canGive ? <Link href="/new" className="btn primary"><Icon name="plus" /> Give someone a task</Link> : <Link href="/notifications" className="btn">View notifications</Link>}
+          actions={canGive ? <Link href="/new" className="btn primary"><Icon name="plus" /> {t('mt.giveSomeone')}</Link> : <Link href="/notifications" className="btn">{t('mt.viewNotif')}</Link>}
         >
-          When someone gives you a task it will appear here, and you will get a notification. You can accept it straight from the list.
+          {t('mt.never.t')}
         </Empty>
       )}
 
@@ -117,40 +108,38 @@ export default function MyTasks() {
         <>
           <div className="tabs" role="tablist">
             {FILTERS.map((f) => (
-              <button key={f.key} role="tab" aria-selected={filter === f.key} className={`tab ${filter === f.key ? 'on' : ''}`} onClick={() => setFilter(f.key)}>
-                {f.label}
-                <span className={`n ${f.key === 'overdue' && counts.overdue > 0 ? 'alert' : ''}`}>{counts[f.key]}</span>
+              <button key={f} role="tab" aria-selected={filter === f} className={`tab ${filter === f ? 'on' : ''}`} onClick={() => setFilter(f)}>
+                {t(`f.${f}`)}
+                <span className={`n ${f === 'overdue' && counts.overdue > 0 ? 'alert' : ''}`}>{n(counts[f])}</span>
               </button>
             ))}
           </div>
           <div className="toolbar">
             <div className="search">
               <Icon name="search" />
-              <input type="search" placeholder="Search by title or person" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search tasks" />
+              <input type="search" placeholder={t('mt.search')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('mt.searchLabel')} />
             </div>
-            <select value={sort} onChange={(e) => setSort(e.target.value as any)} style={{ width: 'auto' }} aria-label="Sort and group">
-              <option value="due">Group by deadline</option>
-              <option value="newest">Newest first</option>
+            <select value={sort} onChange={(e) => setSort(e.target.value as any)} style={{ width: 'auto' }} aria-label={t('mt.sortLabel')}>
+              <option value="due">{t('mt.groupBy')}</option>
+              <option value="newest">{t('mt.newest')}</option>
             </select>
-            {(q || filter !== 'open') && (
-              <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>Reset</button>
-            )}
+            {(q || filter !== 'open') && <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>{t('c.reset')}</button>}
           </div>
 
           {list.length === 0 ? (
             q ? (
-              <Empty title="No tasks match your search" icon="search" actions={<button onClick={() => setQ('')}>Clear search</button>}>
-                Try a different word, or check another tab.
+              <Empty title={t('mt.noMatch')} icon="search" actions={<button onClick={() => setQ('')}>{t('c.clearSearch')}</button>}>
+                {t('mt.tryOther')}
               </Empty>
             ) : (
-              <Empty title={EMPTY_TEXT[filter].title} icon={filter === 'closed' ? 'history' : 'check'} actions={filter !== 'open' ? <button onClick={() => setFilter('open')}>Show open tasks</button> : undefined}>
-                {EMPTY_TEXT[filter].text}
+              <Empty title={t(`mt.e.${filter}`)} icon={filter === 'closed' ? 'history' : 'check'} actions={filter !== 'open' ? <button onClick={() => setFilter('open')}>{t('mt.showOpen')}</button> : undefined}>
+                {t(`mt.e.${filter}.t`)}
               </Empty>
             )
           ) : grouped ? (
             sections.map((s) => (
               <div className="list" key={s.key}>
-                <GroupHead title={s.title} count={s.rows.length} tone={s.tone} />
+                <GroupHead title={t(s.title)} count={s.rows.length} tone={s.tone} />
                 {s.rows.map((a) => <TaskRow key={a.id} a={a} who="mine" onChanged={load} />)}
               </div>
             ))

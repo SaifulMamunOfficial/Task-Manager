@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   MinLength,
@@ -29,6 +30,7 @@ class CreateUserDto {
   @IsOptional() @IsString() phone?: string;
   @IsString() @MinLength(8) password: string;
   @IsOptional() @IsBoolean() isAdmin?: boolean;
+  @IsOptional() @IsIn(['bn', 'en']) language?: string;
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -40,6 +42,7 @@ class UpdateUserDto {
   @IsOptional() @IsString() @MinLength(1) name?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional() @IsIn(['bn', 'en']) language?: string;
 }
 
 class SetPositionsDto {
@@ -61,6 +64,7 @@ const publicUser = {
   phone: true,
   isActive: true,
   isAdmin: true,
+  language: true,
   positions: {
     select: {
       id: true,
@@ -68,7 +72,7 @@ const publicUser = {
       reportsToUserId: true,
       secretariatId: true,
       unit: { select: { id: true, name: true } },
-      position: { select: { id: true, title: true, level: true } },
+      position: { select: { id: true, title: true, titleBn: true, level: true } },
     },
   },
 } as const;
@@ -111,6 +115,7 @@ export class UsersController {
         email,
         phone: dto.phone,
         isAdmin: !!dto.isAdmin,
+        language: dto.language ?? 'bn',
         passwordHash: await bcrypt.hash(dto.password, 10),
         mustChangePassword: true,
         positions: { create: this.normalise(dto.positions ?? []) },

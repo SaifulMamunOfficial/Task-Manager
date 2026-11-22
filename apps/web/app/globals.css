@@ -4,7 +4,7 @@
    soft shadows, coloured status pills. Inter for UI text.
 ------------------------------------------------------------------- */
 :root {
-  --font: var(--font-inter), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: var(--font-inter), var(--font-bn), system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --bg: #f3f5f9;
   --surface: #ffffff;
@@ -453,3 +453,22 @@ input.cb { width: 20px; height: 20px; cursor: pointer; vertical-align: middle; }
 .empty .eact { margin-top: 18px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .tab .n.alert { background: var(--red-bg); color: var(--red); border-radius: 99px; padding: 0 7px; font-weight: 700; }
 .group-h .gicon { display: inline-flex; }
+
+.langsw { background: var(--gray-bg); }
+.sidebar .langsw { background: #1e293b; margin: 4px 8px 8px; }
+.sidebar .langsw button { color: #94a3b8; background: transparent; border: 0; }
+.sidebar .langsw button.on { background: #fff; color: #0f172a; }
+.auth-lang { position: absolute; top: 18px; right: 18px; }
+html[lang='bn'] body { line-height: 1.6; }
+
+/* ---------- Account menu in the sidebar ---------- */
+.sidebar-foot { position: relative; }
+.acct-trigger { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; padding: 8px; border: 0; background: transparent; border-radius: 12px; color: inherit; text-align: left; white-space: normal; }
+.acct-trigger:hover { background: var(--sidebar-2); }
+.acct-trigger .ch { color: #64748b; display: grid; transform: rotate(-90deg); transition: transform .15s; }
+.acct-trigger .ch.up { transform: rotate(90deg); }
+.acct-menu { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); background: #131c2e; border: 1px solid #1e293b; border-radius: 14px; padding: 6px; box-shadow: 0 12px 32px rgba(0, 0, 0, .45); z-index: 40; animation: pop .12s ease; }
+.acct-lang { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px 10px; color: #94a3b8; font-size: 13px; border-bottom: 1px solid #1e293b; margin-bottom: 4px; }
+.acct-lang .langsw { margin: 0 !important; }
+.acct-item { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; padding: 9px 10px; border: 0; background: transparent; color: #cbd5e1; border-radius: 9px; font-weight: 500; justify-content: flex-start; text-decoration: none; }
+.acct-item:hover { background: #1e293b; color: #fff; text-decoration: none; border: 0; }

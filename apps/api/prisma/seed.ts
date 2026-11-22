@@ -22,7 +22,7 @@ async function main() {
 
   // 3) Default positions
   for (const p of DEFAULT_POSITIONS) {
-    await prisma.position.upsert({ where: { title: p.title }, update: {}, create: p });
+    await prisma.position.upsert({ where: { title: p.title }, update: { titleBn: p.titleBn }, create: p });
   }
 
   // 4) Default delegation matrix (admin can change it later)

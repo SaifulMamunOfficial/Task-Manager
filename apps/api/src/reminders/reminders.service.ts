@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { AssignmentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.module';
-import { EmailService } from './email.service';
+import { NotifyService } from '../notify/notify.service';
 import { DEFAULT_RULES, ReminderKind, REMINDER_KINDS } from './reminders.config';
+import { Params, ReminderKey, reminderText } from './messages';
 
 const HOUR = 3600_000;
 const DAY = 24 * HOUR;
@@ -24,7 +25,7 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private prisma: PrismaService,
-    private email: EmailService,
+    private notifier: NotifyService,
   ) {}
 
   onModuleInit() {
@@ -85,8 +86,8 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
       }
 
       const res: RunResult = { created: 0, byKind: {} };
-      const fire = async (kind: ReminderKind, logKey: string, userId: string, message: string, payload: Record<string, unknown>) => {
-        const ok = await this.fireOnce(kind, logKey, userId, message, payload);
+      const fire: FireFn = async (kind, logKey, userId, key, params, payload) => {
+        const ok = await this.fireOnce(kind, logKey, userId, key, params, payload);
         if (ok) {
           res.created++;
           res.byKind[kind] = (res.byKind[kind] ?? 0) + 1;
@@ -114,10 +115,10 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
         if (rules.ACCEPT_PENDING.enabled && a.status === 'PENDING_ACCEPTANCE') {
           const age = now.getTime() - a.createdAt.getTime();
           if (age >= rules.ACCEPT_PENDING.config.afterHours * HOUR) {
-            await fire('ACCEPT_PENDING', `ACCEPT:${a.id}:${day}`, a.assigneeId, `You have not accepted "${title}" yet (from ${a.assignedBy.name}).`, base);
+            await fire('ACCEPT_PENDING', `ACCEPT:${a.id}:${day}`, a.assigneeId, 'ACCEPT_PENDING', { title, from: a.assignedBy.name }, base);
           }
           if (age >= rules.ACCEPT_PENDING.config.escalateAfterHours * HOUR && a.assignedBy.isActive) {
-            await fire('ACCEPT_PENDING', `ACCEPT_ESC:${a.id}`, a.assignedById, `${a.assignee.name} has not accepted "${title}" for over ${rules.ACCEPT_PENDING.config.escalateAfterHours} hours.`, { ...base, escalation: true });
+            await fire('ACCEPT_PENDING', `ACCEPT_ESC:${a.id}`, a.assignedById, 'ACCEPT_ESCALATION', { title, name: a.assignee.name, hours: rules.ACCEPT_PENDING.config.escalateAfterHours }, { ...base, escalation: true });
           }
         }
 
@@ -125,17 +126,17 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
         if (due && working) {
           const untilDue = due.getTime() - now.getTime();
           if (rules.DUE_SOON.enabled && untilDue > 0 && untilDue <= rules.DUE_SOON.config.beforeHours * HOUR) {
-            await fire('DUE_SOON', `DUE_SOON:${a.id}`, a.assigneeId, `"${title}" is due within ${rules.DUE_SOON.config.beforeHours} hours.`, { ...base, dueDate: due });
+            await fire('DUE_SOON', `DUE_SOON:${a.id}`, a.assigneeId, 'DUE_SOON', { title, hours: rules.DUE_SOON.config.beforeHours }, { ...base, dueDate: due });
           }
           const dueDay = new Date(due.getTime() + g.tzOffsetMinutes * 60_000).toISOString().slice(0, 10);
           if (rules.DUE_TODAY.enabled && untilDue > 0 && dueDay === day) {
-            await fire('DUE_TODAY', `DUE_TODAY:${a.id}:${day}`, a.assigneeId, `"${title}" is due today.`, { ...base, dueDate: due });
+            await fire('DUE_TODAY', `DUE_TODAY:${a.id}:${day}`, a.assigneeId, 'DUE_TODAY', { title }, { ...base, dueDate: due });
           }
           if (rules.OVERDUE.enabled && untilDue <= 0) {
             const days = Math.max(1, Math.floor(-untilDue / DAY));
-            await fire('OVERDUE', `OVERDUE:${a.id}:${day}`, a.assigneeId, `"${title}" is overdue by ${days} day(s).`, { ...base, dueDate: due });
+            await fire('OVERDUE', `OVERDUE:${a.id}:${day}`, a.assigneeId, 'OVERDUE', { title, days }, { ...base, dueDate: due });
             if (a.assignedBy.isActive) {
-              await fire('OVERDUE', `OVERDUE_G:${a.id}:${day}`, a.assignedById, `${a.assignee.name}'s task "${title}" is overdue by ${days} day(s).`, { ...base, dueDate: due, asGiver: true });
+              await fire('OVERDUE', `OVERDUE_G:${a.id}:${day}`, a.assignedById, 'OVERDUE_GIVER', { title, name: a.assignee.name, days }, { ...base, dueDate: due, asGiver: true });
             }
           }
         }
@@ -146,14 +147,14 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
           const idleDays = (now.getTime() - last) / DAY;
           if (idleDays >= rules.STALE.config.afterDays) {
             const bucket = Math.floor(now.getTime() / DAY / rules.STALE.config.afterDays);
-            await fire('STALE', `STALE:${a.id}:${bucket}`, a.assigneeId, `No update on "${title}" for ${Math.floor(idleDays)} days. Please post a progress update.`, base);
+            await fire('STALE', `STALE:${a.id}:${bucket}`, a.assigneeId, 'STALE', { title, days: Math.floor(idleDays) }, base);
           }
         }
 
         // 4) Submitted but the giver has not approved
         if (rules.AWAITING_APPROVAL.enabled && a.status === 'SUBMITTED' && a.submittedAt && a.assignedBy.isActive) {
           if (now.getTime() - a.submittedAt.getTime() >= rules.AWAITING_APPROVAL.config.afterHours * HOUR) {
-            await fire('AWAITING_APPROVAL', `APPROVAL:${a.id}:${day}`, a.assignedById, `${a.assignee.name} submitted "${title}". It is waiting for your approval.`, base);
+            await fire('AWAITING_APPROVAL', `APPROVAL:${a.id}:${day}`, a.assignedById, 'AWAITING_APPROVAL', { title, name: a.assignee.name }, base);
           }
         }
       }
@@ -186,11 +187,7 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
         .slice(0, 5)
         .map((a) => ({ assignmentId: a.id, title: a.task.title, priority: a.task.priority, dueDate: a.task.dueDate, status: a.status }));
       const counts = { open: list.length, overdue: overdue.length, dueToday: today.length, needsAccept: pending.length };
-      const lines = [`Good morning. You have ${counts.open} open task(s).`];
-      if (counts.overdue) lines.push(`${counts.overdue} overdue`);
-      if (counts.dueToday) lines.push(`${counts.dueToday} due today`);
-      if (counts.needsAccept) lines.push(`${counts.needsAccept} waiting for you to accept`);
-      await fire('DAILY_DIGEST', `DIGEST:${userId}:${day}`, userId, lines.join(', ').replace(/open task\(s\), /, 'open task(s): '), { counts, top });
+      await fire('DAILY_DIGEST', `DIGEST:${userId}:${day}`, userId, 'DAILY_DIGEST', { counts }, { counts, top });
     }
   }
 
@@ -205,8 +202,7 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
         blocked: list.filter((a) => a.status === 'BLOCKED').length,
         notAccepted: list.filter((a) => a.status === 'PENDING_ACCEPTANCE').length,
       };
-      const msg = `Weekly summary of tasks you gave: ${counts.open} open, ${counts.overdue} overdue, ${counts.awaitingApproval} awaiting your approval, ${counts.blocked} blocked, ${counts.notAccepted} not accepted yet.`;
-      await fire('GIVER_DIGEST', `GDIGEST:${userId}:${day}`, userId, msg, { counts });
+      await fire('GIVER_DIGEST', `GDIGEST:${userId}:${day}`, userId, 'GIVER_DIGEST', { counts }, { counts });
     }
   }
 
@@ -225,22 +221,16 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
   // ---------- delivery ----------
 
   /** Insert the dedup key first; only if that succeeds create the notification and email. */
-  private async fireOnce(kind: ReminderKind, logKey: string, userId: string, message: string, payload: Record<string, unknown>): Promise<boolean> {
+  private async fireOnce(kind: ReminderKind, logKey: string, userId: string, key: ReminderKey, params: Params, payload: Record<string, unknown>): Promise<boolean> {
     try {
       await this.prisma.reminderLog.create({ data: { key: logKey } });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') return false; // already sent
       throw e;
     }
-    const n = await this.prisma.notification.create({
-      data: { userId, type: `REMINDER_${kind}`, payload: { message, ...payload } as Prisma.InputJsonValue },
-    });
-    if (this.email.enabled) {
-      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { email: true, notifyEmail: true, isActive: true } });
-      if (user?.isActive && user.notifyEmail && (await this.email.send(user.email, `Task Manager: ${kind.replace(/_/g, ' ').toLowerCase()}`, message))) {
-        await this.prisma.notification.update({ where: { id: n.id }, data: { emailedAt: new Date() } });
-      }
-    }
+    // English text is kept as a fallback; the app renders the message from key + params in the reader's language.
+    // Push and email delivery (in the person's language, per admin settings) is handled by the notify service.
+    await this.notifier.notify(userId, `REMINDER_${kind}`, { message: reminderText('en', key, params), key, params, ...payload } as Prisma.InputJsonValue);
     return true;
   }
 
@@ -250,4 +240,4 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
   }
 }
 
-type FireFn = (kind: ReminderKind, logKey: string, userId: string, message: string, payload: Record<string, unknown>) => Promise<void>;
+type FireFn = (kind: ReminderKind, logKey: string, userId: string, key: ReminderKey, params: Params, payload: Record<string, unknown>) => Promise<void>;

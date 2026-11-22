@@ -66,9 +66,9 @@ export const GIVER_TRANSITIONS: Record<string, AssignmentStatus[]> = {
 };
 
 export const DEFAULT_POSITIONS = [
-  { title: 'Director', level: 1 },
-  { title: 'Assistant Director', level: 2 },
-  { title: 'Secretary', level: 3 },
-  { title: 'Unit Head', level: 3 },
-  { title: 'Member', level: 4 },
+  { title: 'Director', titleBn: 'পরিচালক', level: 1 },
+  { title: 'Assistant Director', titleBn: 'সহকারী পরিচালক', level: 2 },
+  { title: 'Secretary', titleBn: 'সচিব', level: 3 },
+  { title: 'Unit Head', titleBn: 'ইউনিট প্রধান', level: 3 },
+  { title: 'Member', titleBn: 'সদস্য', level: 4 },
 ];

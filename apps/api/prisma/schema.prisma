@@ -71,6 +71,7 @@ model Unit {
 model Position {
   id             String                 @id @default(cuid())
   title          String                 @unique
+  titleBn        String?
   level          Int                    @default(10)
   members        UserPosition[]
   canGiveTo      DelegationPermission[] @relation("FromPosition")
@@ -87,7 +88,10 @@ model User {
   // Dedicated admin account. Not part of the org hierarchy.
   isAdmin            Boolean  @default(false)
   mustChangePassword Boolean  @default(false)
+  // UI and message language: "bn" or "en"
+  language           String   @default("bn")
   notifyEmail        Boolean  @default(true)
+  notifyPush         Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -97,6 +101,7 @@ model User {
 
   refreshTokens       RefreshToken[]
   deviceTokens        DeviceToken[]
+  pushSubscriptions   PushSubscription[]
   tasksCreated        Task[]
   assignmentsReceived TaskAssignment[] @relation("Assignee")
   assignmentsGiven    TaskAssignment[] @relation("Giver")
@@ -315,4 +320,26 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([entity, entityId])
+}
+
+// Admin-editable settings (email server, push keys, ...). Secrets inside are stored encrypted.
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+// One row per browser that agreed to receive web push notifications.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

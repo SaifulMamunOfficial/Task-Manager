@@ -2,24 +2,13 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
+import { useI18n } from '../../lib/i18n';
 import { OPEN, isOverdue } from '../../lib/ui';
 import { Empty, Err, GroupHead, ListHead, PageHead, Skeleton, TaskRow } from '../../components/bits';
 import { Icon } from '../../components/icons';
-import { useAuth } from '../../lib/auth';
 
-const FILTERS = [
-  { key: 'open', label: 'Open' },
-  { key: 'approve', label: 'To approve' },
-  { key: 'overdue', label: 'Overdue' },
-  { key: 'closed', label: 'Closed' },
-];
-
-const EMPTY: Record<string, { title: string; text: string }> = {
-  open: { title: 'No open tasks', text: 'Everything you gave has been finished.' },
-  approve: { title: 'Nothing to approve', text: 'No one is waiting for your approval right now.' },
-  overdue: { title: 'Nothing is overdue', text: 'All the tasks you gave are within their deadlines.' },
-  closed: { title: 'No closed tasks yet', text: 'Approved, declined and cancelled tasks will be listed here.' },
-};
+const FILTERS = ['open', 'approve', 'overdue', 'closed'];
 
 function matches(a: any, f: string) {
   const open = OPEN.includes(a.status);
@@ -32,6 +21,7 @@ function matches(a: any, f: string) {
 
 export default function Given() {
   const { canGive } = useAuth();
+  const { t, n, err } = useI18n();
   const [all, setAll] = useState<any[] | null>(null);
   const [filter, setFilter] = useState('open');
   const [q, setQ] = useState('');
@@ -42,7 +32,7 @@ export default function Given() {
   }, []);
   useEffect(load, [load]);
 
-  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.key, (all ?? []).filter((a) => matches(a, f.key)).length])), [all]);
+  const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f, (all ?? []).filter((a) => matches(a, f)).length])), [all]);
 
   // Group rows that belong to the same task (one task given to several people).
   const groups = useMemo(() => {
@@ -58,31 +48,27 @@ export default function Given() {
   const neverGave = all !== null && all.length === 0;
   const subtitle =
     all === null || counts.open === 0
-      ? 'Tasks you gave to others, and where each person stands.'
-      : `${counts.open} open${counts.approve ? ` · ${counts.approve} waiting for your approval` : ''}${counts.overdue ? ` · ${counts.overdue} overdue` : ''}`;
+      ? t('gv.sub')
+      : [t('mt.open', { n: counts.open }), counts.approve ? t('gv.waiting', { n: counts.approve }) : '', counts.overdue ? t('mt.overdue', { n: counts.overdue }) : ''].filter(Boolean).join(' · ');
 
   return (
     <>
       <PageHead
-        title="Assigned by me"
+        title={t('gv.title')}
         subtitle={subtitle}
-        actions={canGive && !neverGave ? <Link href="/new" className="btn primary"><Icon name="plus" /> New task</Link> : undefined}
+        actions={canGive && !neverGave ? <Link href="/new" className="btn primary"><Icon name="plus" /> {t('nav.newTask')}</Link> : undefined}
       />
-      <Err msg={error} />
+      <Err msg={error ? err(error) : ''} />
 
       {all === null && !error && <Skeleton />}
 
       {neverGave && (canGive ? (
-        <Empty
-          title="You have not given any tasks yet"
-          icon="send"
-          actions={<Link href="/new" className="btn primary"><Icon name="plus" /> Give a task</Link>}
-        >
-          Tasks you give to others appear here, so you can follow each person&apos;s progress and approve their work.
+        <Empty title={t('gv.never')} icon="send" actions={<Link href="/new" className="btn primary"><Icon name="plus" /> {t('gv.giveTask')}</Link>}>
+          {t('gv.never.t')}
         </Empty>
       ) : (
-        <Empty title="Your position cannot give tasks" icon="send" actions={<Link href="/tasks" className="btn">Go to my tasks</Link>}>
-          Nothing will appear here. If this should change, ask your administrator to update the task permissions.
+        <Empty title={t('gv.cannot')} icon="send" actions={<Link href="/tasks" className="btn">{t('gv.toMyTasks')}</Link>}>
+          {t('gv.cannot.t')}
         </Empty>
       ))}
 
@@ -90,28 +76,28 @@ export default function Given() {
         <>
           <div className="tabs" role="tablist">
             {FILTERS.map((f) => (
-              <button key={f.key} role="tab" aria-selected={filter === f.key} className={`tab ${filter === f.key ? 'on' : ''}`} onClick={() => setFilter(f.key)}>
-                {f.label}
-                <span className={`n ${f.key === 'overdue' && counts.overdue > 0 ? 'alert' : ''}`}>{counts[f.key]}</span>
+              <button key={f} role="tab" aria-selected={filter === f} className={`tab ${filter === f ? 'on' : ''}`} onClick={() => setFilter(f)}>
+                {t(`f.${f}`)}
+                <span className={`n ${f === 'overdue' && counts.overdue > 0 ? 'alert' : ''}`}>{n(counts[f])}</span>
               </button>
             ))}
           </div>
           <div className="toolbar">
             <div className="search">
               <Icon name="search" />
-              <input type="search" placeholder="Search by title or person" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search tasks" />
+              <input type="search" placeholder={t('mt.search')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('mt.searchLabel')} />
             </div>
-            {(q || filter !== 'open') && <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>Reset</button>}
+            {(q || filter !== 'open') && <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>{t('c.reset')}</button>}
           </div>
 
           {groups.length === 0 ? (
             q ? (
-              <Empty title="No tasks match your search" icon="search" actions={<button onClick={() => setQ('')}>Clear search</button>}>
-                Try a different word, or check another tab.
+              <Empty title={t('mt.noMatch')} icon="search" actions={<button onClick={() => setQ('')}>{t('c.clearSearch')}</button>}>
+                {t('mt.tryOther')}
               </Empty>
             ) : (
-              <Empty title={EMPTY[filter].title} icon={filter === 'closed' ? 'history' : 'check'} actions={filter !== 'open' ? <button onClick={() => setFilter('open')}>Show open tasks</button> : undefined}>
-                {EMPTY[filter].text}
+              <Empty title={t(`gv.e.${filter}`)} icon={filter === 'closed' ? 'history' : 'check'} actions={filter !== 'open' ? <button onClick={() => setFilter('open')}>{t('mt.showOpen')}</button> : undefined}>
+                {t(`gv.e.${filter}.t`)}
               </Empty>
             )
           ) : (

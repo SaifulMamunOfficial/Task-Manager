@@ -10,6 +10,7 @@ import { SettingsModule } from './settings/settings.module';
 import { TasksModule } from './tasks/tasks.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { NotifyModule } from './notify/notify.module';
 import { AuditModule } from './common/audit.module';
 import { HealthController } from './common/health.controller';
 
@@ -18,6 +19,7 @@ import { HealthController } from './common/health.controller';
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuditModule,
+    NotifyModule,
     AuthModule,
     OrgModule,
     UsersModule,

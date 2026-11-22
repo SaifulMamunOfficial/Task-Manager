@@ -73,6 +73,10 @@ export class AuthService {
     await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
   }
 
+  async setLanguage(userId: string, language: string) {
+    await this.prisma.user.update({ where: { id: userId }, data: { language } });
+  }
+
   me(userId: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
@@ -83,12 +87,15 @@ export class AuthService {
         phone: true,
         isAdmin: true,
         mustChangePassword: true,
+        language: true,
+        notifyEmail: true,
+        notifyPush: true,
         positions: {
           select: {
             id: true,
             isPrimary: true,
             unit: { select: { id: true, name: true } },
-            position: { select: { id: true, title: true, level: true } },
+            position: { select: { id: true, title: true, titleBn: true, level: true } },
             reportsToUserId: true,
             secretariatId: true,
           },

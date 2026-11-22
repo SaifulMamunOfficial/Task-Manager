@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, post } from '../../lib/api';
-import { fmtDate, notificationText } from '../../lib/ui';
+import { useI18n } from '../../lib/i18n';
 import { Err, PageHead } from '../../components/bits';
 import { Icon } from '../../components/icons';
 
 export default function Notifications() {
+  const { t, dateTime, notifText, err } = useI18n();
   const [list, setList] = useState<any[] | null>(null);
   const [error, setError] = useState('');
 
@@ -15,41 +16,42 @@ export default function Notifications() {
     load();
   }, []);
 
-  const unread = list?.filter((n) => !n.readAt).length ?? 0;
+  const unread = list?.filter((x) => !x.readAt).length ?? 0;
 
   async function markAll() {
     await post('/notifications/read', {});
+    window.dispatchEvent(new Event('tm:refresh'));
     load();
   }
 
   return (
     <>
       <PageHead
-        title="Notifications"
-        subtitle={unread > 0 ? `${unread} unread` : 'You are all caught up.'}
-        actions={<button onClick={markAll} disabled={unread === 0}><Icon name="check" /> Mark all as read</button>}
+        title={t('nt.title')}
+        subtitle={unread > 0 ? t('nt.unread', { n: unread }) : t('nt.caughtUp')}
+        actions={<button onClick={markAll} disabled={unread === 0}><Icon name="check" /> {t('nt.markAll')}</button>}
       />
-      <Err msg={error} />
+      <Err msg={error ? err(error) : ''} />
       {list === null ? (
-        <div className="empty">Loading…</div>
+        <div className="empty">{t('c.loading')}</div>
       ) : list.length === 0 ? (
-        <div className="card empty">No notifications yet.</div>
+        <div className="card empty">{t('nt.empty')}</div>
       ) : (
-        list.map((n) => {
-          const id = n.payload?.assignmentId;
-          const cls = `item ${n.readAt ? '' : 'unread'}`;
+        list.map((x) => {
+          const id = x.payload?.assignmentId;
+          const cls = `item ${x.readAt ? '' : 'unread'}`;
           const body = (
             <>
-              <div style={{ fontWeight: n.readAt ? 400 : 650 }}>{notificationText(n)}</div>
-              <div className="muted">{fmtDate(n.createdAt)}</div>
+              <div style={{ fontWeight: x.readAt ? 400 : 650 }}>{notifText(x)}</div>
+              <div className="muted">{dateTime(x.createdAt)}</div>
             </>
           );
           return id ? (
-            <Link key={n.id} href={`/tasks/${id}`} className={cls} onClick={() => post('/notifications/read', { ids: [n.id] })}>
+            <Link key={x.id} href={`/tasks/${id}`} className={cls} onClick={() => post('/notifications/read', { ids: [x.id] })}>
               {body}
             </Link>
           ) : (
-            <div key={n.id} className={cls}>
+            <div key={x.id} className={cls}>
               {body}
             </div>
           );

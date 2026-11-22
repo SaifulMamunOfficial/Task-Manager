@@ -17,6 +17,7 @@ class UpdateUnitDto {
 }
 class PositionDto {
   @IsString() @MinLength(1) title: string;
+  @IsOptional() @IsString() titleBn?: string;
   @IsOptional() @IsInt() level?: number;
 }
 class SecretariatDto {
@@ -49,7 +50,7 @@ export class OrgController {
             reportsToUserId: true,
             secretariatId: true,
             user: { select: { id: true, name: true } },
-            position: { select: { id: true, title: true, level: true } },
+            position: { select: { id: true, title: true, titleBn: true, level: true } },
           },
         },
       },

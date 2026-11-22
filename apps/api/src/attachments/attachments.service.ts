@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.module';
 import { AuditService } from '../common/audit.module';
 import { AuthUser } from '../auth/decorators';
 import { StorageService } from './storage.service';
+import { NotifyService } from '../notify/notify.service';
 
 export const MAX_BYTES = Number(process.env.MAX_UPLOAD_MB ?? 25) * 1024 * 1024;
 const MAX_PER_TASK = 20;
@@ -23,6 +24,7 @@ export class AttachmentsService {
     private prisma: PrismaService,
     private storage: StorageService,
     private audit: AuditService,
+    private notifier: NotifyService,
   ) {}
 
   /** multer decodes names as latin1; restore UTF-8 (Bangla etc.), strip path parts and control chars. */
@@ -74,16 +76,14 @@ export class AttachmentsService {
   /** Brief files from the person who created the task. */
   async addToTask(me: AuthUser, taskId: string, files: Upload[]) {
     this.validate(files);
-    const task = await this.prisma.task.findUnique({ where: { id: taskId }, include: { assignments: { select: { assigneeId: true, status: true } } } });
+    const task = await this.prisma.task.findUnique({ where: { id: taskId }, include: { assignments: { select: { id: true, assigneeId: true, status: true } } } });
     if (!task || task.createdById !== me.id) throw new NotFoundException('Task not found');
     if (task.closedAt) throw new BadRequestException('This task is closed');
     const existing = await this.prisma.attachment.count({ where: { taskId } });
     if (existing + files.length > MAX_PER_TASK) throw new BadRequestException(`A task can have at most ${MAX_PER_TASK} attachments`);
     const rows = await this.store(files, me.id, { taskId });
     await Promise.all(
-      task.assignments.map((a) =>
-        this.prisma.notification.create({ data: { userId: a.assigneeId, type: 'ATTACHMENT_ADDED', payload: { taskId, title: task.title, count: rows.length, byUserId: me.id } } }),
-      ),
+      task.assignments.map((a) => this.notifier.notify(a.assigneeId, 'ATTACHMENT_ADDED', { assignmentId: a.id, taskId, title: task.title, count: rows.length, byUserId: me.id })),
     );
     await this.audit.log(me.id, 'ATTACH', 'Task', taskId, undefined, rows.map((r) => r.fileName));
     return rows;
@@ -108,9 +108,7 @@ export class AttachmentsService {
       throw e;
     }
     const other = me.id === a.assigneeId ? a.assignedById : a.assigneeId;
-    await this.prisma.notification.create({
-      data: { userId: other, type: 'ATTACHMENT_ADDED', payload: { assignmentId, taskId: a.taskId, title: a.task.title, count: rows.length, byUserId: me.id } },
-    });
+    await this.notifier.notify(other, 'ATTACHMENT_ADDED', { assignmentId, taskId: a.taskId, title: a.task.title, count: rows.length, byUserId: me.id });
     await this.audit.log(me.id, 'ATTACH', 'TaskAssignment', assignmentId, undefined, rows.map((r) => r.fileName));
     return { updateId: update.id, attachments: rows };
   }

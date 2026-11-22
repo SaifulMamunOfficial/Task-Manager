@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Err } from './bits';
+import { useI18n } from '../lib/i18n';
 
 export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -26,6 +27,7 @@ export function Modal({ title, onClose, children }: { title: string; onClose: ()
 
 /** Ask for a required written reason (declining a task, sending work back). */
 export function ReasonModal({ title, hint, confirmLabel, danger, onConfirm, onClose }: { title: string; hint?: string; confirmLabel: string; danger?: boolean; onConfirm: (reason: string) => Promise<void>; onClose: () => void }) {
+  const { t, err } = useI18n();
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -36,18 +38,18 @@ export function ReasonModal({ title, hint, confirmLabel, danger, onConfirm, onCl
       await onConfirm(reason.trim());
       onClose();
     } catch (e: any) {
-      setError(e.message);
+      setError(err(e.message));
       setBusy(false);
     }
   }
   return (
     <Modal title={title} onClose={onClose}>
       {hint && <p className="muted" style={{ marginBottom: 10 }}>{hint}</p>}
-      <label htmlFor="reason">Reason</label>
+      <label htmlFor="reason">{t('c.reason')}</label>
       <textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && reason.trim() && go()} />
       <Err msg={error} />
       <div className="row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
-        <button onClick={onClose}>Cancel</button>
+        <button onClick={onClose}>{t('c.cancel')}</button>
         <button className={danger ? 'danger' : 'primary'} disabled={busy || !reason.trim()} onClick={go}>{confirmLabel}</button>
       </div>
     </Modal>

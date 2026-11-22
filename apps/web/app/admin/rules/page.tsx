@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../../lib/api';
+import { useI18n } from '../../../lib/i18n';
 import { useOrgData, type Pos } from '../../../lib/orgdata';
 import { Err, PageHead } from '../../../components/bits';
 import { Icon } from '../../../components/icons';
@@ -8,32 +9,33 @@ import { useToast } from '../../../components/toast';
 
 type OrgData = ReturnType<typeof useOrgData>;
 const TABS = [
-  { key: 'delegation', label: 'Task permissions', icon: 'send' as const },
-  { key: 'visibility', label: 'Visibility', icon: 'users' as const },
-  { key: 'reminders', label: 'Reminders', icon: 'bell' as const },
+  { key: 'delegation', label: 'ad.r.tabDeleg', icon: 'send' as const },
+  { key: 'visibility', label: 'ad.r.tabVis', icon: 'users' as const },
+  { key: 'reminders', label: 'ad.r.tabRem', icon: 'bell' as const },
 ];
 
 export default function Rules() {
   const d = useOrgData();
+  const { t, err } = useI18n();
   const [tab, setTab] = useState('delegation');
 
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get('tab');
-    if (t && TABS.some((x) => x.key === t)) setTab(t);
+    const q = new URLSearchParams(window.location.search).get('tab');
+    if (q && TABS.some((x) => x.key === q)) setTab(q);
   }, []);
-  const pick = (t: string) => {
-    setTab(t);
-    window.history.replaceState(null, '', `?tab=${t}`);
+  const pick = (k: string) => {
+    setTab(k);
+    window.history.replaceState(null, '', `?tab=${k}`);
   };
 
   return (
     <>
-      <PageHead title="Rules & settings" subtitle="Control how tasks move between people, what task givers can see, and when people are reminded." />
-      <Err msg={d.error} />
+      <PageHead title={t('nav.rules')} subtitle={t('ad.r.sub')} />
+      <Err msg={d.error ? err(d.error) : ''} />
       <div className="tabs" role="tablist">
-        {TABS.map((t) => (
-          <button key={t.key} role="tab" aria-selected={tab === t.key} className={`tab ${tab === t.key ? 'on' : ''}`} onClick={() => pick(t.key)}>
-            <span className="row" style={{ gap: 7, flexWrap: 'nowrap' }}><Icon name={t.icon} size={15} /> {t.label}</span>
+        {TABS.map((x) => (
+          <button key={x.key} role="tab" aria-selected={tab === x.key} className={`tab ${tab === x.key ? 'on' : ''}`} onClick={() => pick(x.key)}>
+            <span className="row" style={{ gap: 7, flexWrap: 'nowrap' }}><Icon name={x.icon} size={15} /> {t(x.label)}</span>
           </button>
         ))}
       </div>
@@ -59,22 +61,24 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 function Delegation({ d }: { d: OrgData }) {
   const toast = useToast();
+  const { t, n, posTitle, err } = useI18n();
   const [rules, setRules] = useState<{ fromPositionId: string; toPositionId: string }[] | null>(null);
   const [hover, setHover] = useState<{ r: string; c: string } | null>(null);
   const [state, setState] = useState<SaveState>('idle');
   const positions = useMemo(() => [...d.positions].sort((a, b) => a.level - b.level || a.title.localeCompare(b.title)), [d.positions]);
 
   useEffect(() => {
-    api('/settings/delegation').then(setRules).catch((e) => toast.error(e.message));
+    api('/settings/delegation').then(setRules).catch((e) => toast.error(err(e.message)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const allowed = (from: string, to: string) => (rules ?? []).some((r) => r.fromPositionId === from && r.toPositionId === to);
   const holders = (pid: string) => d.users.filter((u) => u.isActive && !u.isAdmin && u.positions.some((p) => p.position.id === pid)).length;
+  const people = (c: number) => t(c === 1 ? 'c.person' : 'c.people', { n: c });
 
   async function setRow(from: Pos, next: string[]) {
     const before = rules ?? [];
-    setRules([...before.filter((r) => r.fromPositionId !== from.id), ...next.map((t) => ({ fromPositionId: from.id, toPositionId: t }))]);
+    setRules([...before.filter((r) => r.fromPositionId !== from.id), ...next.map((x) => ({ fromPositionId: from.id, toPositionId: x }))]);
     setState('saving');
     try {
       await api('/settings/delegation', { method: 'PUT', body: JSON.stringify({ fromPositionId: from.id, toPositionIds: next }) });
@@ -82,7 +86,7 @@ function Delegation({ d }: { d: OrgData }) {
     } catch (e: any) {
       setRules(before);
       setState('error');
-      toast.error(e.message);
+      toast.error(err(e.message));
     }
   }
 
@@ -96,26 +100,24 @@ function Delegation({ d }: { d: OrgData }) {
   return (
     <>
       <div className="row between" style={{ alignItems: 'flex-end' }}>
-        <Intro title="Who can give tasks to whom">
-          Tick a box to let the position in that row give tasks to the position in that column. If someone holds more than one position, any of them counts.
-        </Intro>
+        <Intro title={t('ad.r.delegTitle')}>{t('ad.r.delegText')}</Intro>
         <span className={`savestate ${state}`} role="status" aria-live="polite">
-          {state === 'saving' ? 'Saving…' : state === 'saved' ? <><Icon name="check" size={14} /> All changes saved</> : state === 'error' ? 'Could not save' : 'Changes save automatically'}
+          {state === 'saving' ? t('c.saving') : state === 'saved' ? <><Icon name="check" size={14} /> {t('ad.r.saved')}</> : state === 'error' ? t('ad.r.saveFail') : t('ad.r.auto')}
         </span>
       </div>
 
       {positions.length === 0 ? (
-        <div className="list"><div className="empty"><b>No positions yet</b>Add positions under Organization first.</div></div>
+        <div className="list"><div className="empty"><b>{t('ad.r.noPositions')}</b>{t('ad.r.noPositionsText')}</div></div>
       ) : (
         <div className="mx-wrap">
           <table className="mx" onMouseLeave={() => setHover(null)}>
             <thead>
               <tr>
-                <th className="rowh corner"><span>From</span><span className="arrow">gives tasks to →</span></th>
+                <th className="rowh corner"><span>{t('ad.r.from')}</span><span className="arrow">{t('ad.r.givesTo')}</span></th>
                 {positions.map((c) => (
                   <th key={c.id} className={hover?.c === c.id ? 'hl' : ''}>
-                    {c.title}
-                    <small>{holders(c.id)} {holders(c.id) === 1 ? 'person' : 'people'}</small>
+                    {posTitle(c)}
+                    <small>{people(holders(c.id))}</small>
                   </th>
                 ))}
               </tr>
@@ -124,10 +126,10 @@ function Delegation({ d }: { d: OrgData }) {
               {positions.map((r) => (
                 <tr key={r.id} className={hover?.r === r.id ? 'hl' : ''}>
                   <th scope="row" className="rowh">
-                    <span className="lvl">{r.level}</span>
+                    <span className="lvl">{n(r.level)}</span>
                     <span>
-                      {r.title}
-                      <small>{holders(r.id)} {holders(r.id) === 1 ? 'person' : 'people'}</small>
+                      {posTitle(r)}
+                      <small>{people(holders(r.id))}</small>
                     </span>
                   </th>
                   {positions.map((c) => (
@@ -137,7 +139,7 @@ function Delegation({ d }: { d: OrgData }) {
                         className="cb"
                         checked={allowed(r.id, c.id)}
                         onChange={() => toggle(r, c)}
-                        aria-label={`${r.title} can give tasks to ${c.title}`}
+                        aria-label={t('ad.r.cellAria', { from: posTitle(r), to: posTitle(c) })}
                       />
                     </td>
                   ))}
@@ -147,9 +149,7 @@ function Delegation({ d }: { d: OrgData }) {
           </table>
         </div>
       )}
-      <p className="muted" style={{ marginTop: 10 }}>
-        A position with no ticks in its row cannot give tasks. Nobody can give a task to themselves.
-      </p>
+      <p className="muted" style={{ marginTop: 10 }}>{t('ad.r.delegNote')}</p>
     </>
   );
 }
@@ -159,23 +159,24 @@ function Delegation({ d }: { d: OrgData }) {
 type Mode = 'DIRECT' | 'SUMMARY' | 'FULL';
 type Vis = { id: string; scope: 'GLOBAL' | 'POSITION' | 'USER'; scopeRefId: string; mode: Mode };
 
-const MODES: { v: Mode; label: string; text: string }[] = [
-  { v: 'DIRECT', label: 'Direct only', text: 'The giver sees only the person they gave the task to.' },
-  { v: 'SUMMARY', label: 'Summary', text: 'Plus counts of what happened further down, with no names or comments.' },
-  { v: 'FULL', label: 'Full chain', text: 'Plus every person and status further down the chain.' },
+const MODES: { v: Mode; label: string; text: string; short: string }[] = [
+  { v: 'DIRECT', label: 'ad.r.mDirect', text: 'ad.r.mDirectT', short: 'ad.r.mDirectS' },
+  { v: 'SUMMARY', label: 'ad.r.mSummary', text: 'ad.r.mSummaryT', short: 'ad.r.mSummaryS' },
+  { v: 'FULL', label: 'ad.r.mFull', text: 'ad.r.mFullT', short: 'ad.r.mFullS' },
 ];
 
 function ChainDiagram({ mode }: { mode: Mode }) {
+  const { t, n } = useI18n();
   const third = mode === 'FULL' ? 'seen' : mode === 'SUMMARY' ? 'count' : 'hidden';
   return (
     <div className="chain" aria-hidden="true">
-      <div className="cnode"><span className="cdot seen"><Icon name="user" size={14} /></span><small>Giver</small></div>
+      <div className="cnode"><span className="cdot seen"><Icon name="user" size={14} /></span><small>{t('ad.r.giver')}</small></div>
       <span className="cline seen" />
-      <div className="cnode"><span className="cdot seen"><Icon name="user" size={14} /></span><small>Receiver</small></div>
+      <div className="cnode"><span className="cdot seen"><Icon name="user" size={14} /></span><small>{t('ad.r.receiver')}</small></div>
       <span className={`cline ${third === 'hidden' ? '' : third === 'count' ? 'dash' : 'seen'}`} />
       <div className="cnode">
-        <span className={`cdot ${third}`}>{third === 'count' ? '3' : third === 'seen' ? <Icon name="users" size={14} /> : <Icon name="close" size={13} />}</span>
-        <small>{third === 'seen' ? 'Names' : third === 'count' ? 'Counts' : 'Hidden'}</small>
+        <span className={`cdot ${third}`}>{third === 'count' ? n(3) : third === 'seen' ? <Icon name="users" size={14} /> : <Icon name="close" size={13} />}</span>
+        <small>{third === 'seen' ? t('ad.r.names') : third === 'count' ? t('ad.r.counts') : t('ad.r.hidden')}</small>
       </div>
     </div>
   );
@@ -183,8 +184,9 @@ function ChainDiagram({ mode }: { mode: Mode }) {
 
 function Visibility({ d }: { d: OrgData }) {
   const toast = useToast();
+  const { t, posTitle, err } = useI18n();
   const [rows, setRows] = useState<Vis[] | null>(null);
-  const load = () => api('/settings/visibility').then(setRows).catch((e) => toast.error(e.message));
+  const load = () => api('/settings/visibility').then(setRows).catch((e) => toast.error(err(e.message)));
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,16 +198,16 @@ function Visibility({ d }: { d: OrgData }) {
       toast.ok(msg);
       await load();
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(err(e.message));
     }
   }
   async function clear(scope: string, ref: string) {
     try {
       await api(`/settings/visibility?scope=${scope}&scopeRefId=${encodeURIComponent(ref)}`, { method: 'DELETE' });
-      toast.ok('Exception removed');
+      toast.ok(t('ad.r.exRemoved'));
       await load();
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(err(e.message));
     }
   }
 
@@ -214,18 +216,16 @@ function Visibility({ d }: { d: OrgData }) {
 
   return (
     <>
-      <Intro title="How much of the chain a task giver can see">
-        This is about the person who <b>gave</b> a task and what they can see after the receiver passes it on to others. People not involved in a task never see it.
-      </Intro>
+      <Intro title={t('ad.r.visTitle')}>{t('ad.r.visText')}</Intro>
 
-      <h2>Default for everyone</h2>
-      <div className="vgrid" role="radiogroup" aria-label="Default visibility">
+      <h2>{t('ad.r.defaultAll')}</h2>
+      <div className="vgrid" role="radiogroup" aria-label={t('ad.r.defaultAll')}>
         {MODES.map((m) => (
-          <button key={m.v} role="radio" aria-checked={global === m.v} className={`vcard ${global === m.v ? 'on' : ''}`} onClick={() => global !== m.v && put('GLOBAL', undefined, m.v, `Default set to "${m.label}"`)}>
+          <button key={m.v} role="radio" aria-checked={global === m.v} className={`vcard ${global === m.v ? 'on' : ''}`} onClick={() => global !== m.v && put('GLOBAL', undefined, m.v, t('ad.r.defaultSet', { mode: t(m.label) }))}>
             <span className="vcheck">{global === m.v && <Icon name="check" size={13} />}</span>
             <ChainDiagram mode={m.v} />
-            <b>{m.label}</b>
-            <span className="muted">{m.text}</span>
+            <b>{t(m.label)}</b>
+            <span className="muted">{t(m.text)}</span>
           </button>
         ))}
       </div>
@@ -233,28 +233,28 @@ function Visibility({ d }: { d: OrgData }) {
       <div className="two" style={{ marginTop: 24, alignItems: 'start' }}>
         {(['POSITION', 'USER'] as const).map((scope) => {
           const list = rows.filter((r) => r.scope === scope);
-          const options = scope === 'POSITION' ? d.positions.map((p) => ({ id: p.id, name: p.title })) : d.users.filter((u) => u.isActive && !u.isAdmin).map((u) => ({ id: u.id, name: u.name }));
+          const options = scope === 'POSITION' ? d.positions.map((p) => ({ id: p.id, name: posTitle(p) })) : d.users.filter((u) => u.isActive && !u.isAdmin).map((u) => ({ id: u.id, name: u.name }));
           const nameOf = (id: string) => options.find((o) => o.id === id)?.name ?? id;
           return (
             <div key={scope} className="panel" style={{ marginBottom: 0 }}>
-              <div className="panel-h">{scope === 'POSITION' ? 'Exceptions by position' : 'Exceptions by person'}</div>
+              <div className="panel-h">{scope === 'POSITION' ? t('ad.r.exPos') : t('ad.r.exUser')}</div>
               <div className="panel-b">
-                <p className="muted" style={{ marginBottom: 10 }}>{scope === 'POSITION' ? 'Everyone holding this position follows it.' : 'Overrides the position setting for one person.'}</p>
-                {list.length === 0 && <p className="muted" style={{ marginBottom: 10 }}>No exceptions. Everyone follows the default.</p>}
+                <p className="muted" style={{ marginBottom: 10 }}>{scope === 'POSITION' ? t('ad.r.exPosText') : t('ad.r.exUserText')}</p>
+                {list.length === 0 && <p className="muted" style={{ marginBottom: 10 }}>{t('ad.r.noEx')}</p>}
                 {list.map((r) => (
                   <div key={r.id} className="file" style={{ background: 'var(--surface)' }}>
                     <span className="grow" style={{ fontWeight: 600 }}>{nameOf(r.scopeRefId)}</span>
                     <div className="seg">
                       {MODES.map((m) => (
-                        <button key={m.v} className={r.mode === m.v ? 'on' : ''} style={{ height: 28, padding: '0 9px', fontSize: 12.5 }} onClick={() => r.mode !== m.v && put(scope, r.scopeRefId, m.v, 'Exception updated')}>
-                          {m.label.split(' ')[0]}
+                        <button key={m.v} className={r.mode === m.v ? 'on' : ''} style={{ height: 28, padding: '0 9px', fontSize: 12.5 }} onClick={() => r.mode !== m.v && put(scope, r.scopeRefId, m.v, t('ad.r.exUpdated'))}>
+                          {t(m.short)}
                         </button>
                       ))}
                     </div>
-                    <button className="ghost sm" aria-label={`Remove exception for ${nameOf(r.scopeRefId)}`} onClick={() => clear(scope, r.scopeRefId)}><Icon name="close" size={14} /></button>
+                    <button className="ghost sm" aria-label={t('ad.r.exRemoveAria', { name: nameOf(r.scopeRefId) })} onClick={() => clear(scope, r.scopeRefId)}><Icon name="close" size={14} /></button>
                   </div>
                 ))}
-                <AddException options={options} taken={list.map((r) => r.scopeRefId)} onAdd={(id, mode) => put(scope, id, mode, 'Exception added')} />
+                <AddException options={options} taken={list.map((r) => r.scopeRefId)} onAdd={(id, mode) => put(scope, id, mode, t('ad.r.exAdded'))} />
               </div>
             </div>
           );
@@ -265,20 +265,21 @@ function Visibility({ d }: { d: OrgData }) {
 }
 
 function AddException({ options, taken, onAdd }: { options: { id: string; name: string }[]; taken: string[]; onAdd: (id: string, mode: Mode) => void }) {
+  const { t } = useI18n();
   const free = options.filter((o) => !taken.includes(o.id));
   const [id, setId] = useState('');
   const [mode, setMode] = useState<Mode>('SUMMARY');
   if (free.length === 0) return null;
   return (
     <div className="row" style={{ marginTop: 8, flexWrap: 'nowrap' }}>
-      <select className="grow" value={id} onChange={(e) => setId(e.target.value)} aria-label="Choose who">
-        <option value="">Choose…</option>
+      <select className="grow" value={id} onChange={(e) => setId(e.target.value)} aria-label={t('ad.r.chooseWho')}>
+        <option value="">{t('ad.r.choose')}</option>
         {free.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
-      <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} style={{ width: 130 }} aria-label="Visibility mode">
-        {MODES.map((m) => <option key={m.v} value={m.v}>{m.label}</option>)}
+      <select value={mode} onChange={(e) => setMode(e.target.value as Mode)} style={{ width: 130 }} aria-label={t('ad.r.visMode')}>
+        {MODES.map((m) => <option key={m.v} value={m.v}>{t(m.label)}</option>)}
       </select>
-      <button disabled={!id} onClick={() => { onAdd(id, mode); setId(''); }}>Add</button>
+      <button disabled={!id} onClick={() => { onAdd(id, mode); setId(''); }}>{t('c.add')}</button>
     </div>
   );
 }
@@ -287,38 +288,32 @@ function AddException({ options, taken, onAdd }: { options: { id: string; name: 
 
 type Rule = { enabled: boolean; config: Record<string, number> };
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
-const hourLabel = (h: number) => `${h === 0 ? 12 : h > 12 ? h - 12 : h}:00 ${h < 12 ? 'AM' : 'PM'}`;
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const ZONES = [
-  { v: 360, l: 'Bangladesh (UTC+6)' }, { v: 330, l: 'India (UTC+5:30)' }, { v: 300, l: 'Pakistan (UTC+5)' }, { v: 240, l: 'Gulf (UTC+4)' },
-  { v: 180, l: 'Saudi Arabia (UTC+3)' }, { v: 0, l: 'UTC' }, { v: 480, l: 'Singapore (UTC+8)' },
-];
+const ZONES = [360, 330, 300, 240, 180, 0, 480];
 
 type Field = { key: string; label: string; kind: 'number' | 'hour' | 'weekday' | 'zone'; unit?: string };
-const META: Record<string, { title: string; text: string; fields: Field[] }> = {
-  GLOBAL: { title: 'Sending window and time zone', text: 'Reminders are only sent between these hours, in this time zone.', fields: [
-    { key: 'tzOffsetMinutes', label: 'Time zone', kind: 'zone' }, { key: 'windowStartHour', label: 'Send from', kind: 'hour' }, { key: 'windowEndHour', label: 'Send until', kind: 'hour' } ] },
-  ACCEPT_PENDING: { title: 'Task not accepted yet', text: 'Remind the assignee daily, and tell the giver if it takes too long.', fields: [
-    { key: 'afterHours', label: 'Remind assignee after', kind: 'number', unit: 'hours' }, { key: 'escalateAfterHours', label: 'Tell the giver after', kind: 'number', unit: 'hours' } ] },
-  DUE_SOON: { title: 'Deadline coming up', text: 'Remind the assignee before the deadline.', fields: [{ key: 'beforeHours', label: 'Remind', kind: 'number', unit: 'hours before' }] },
-  DUE_TODAY: { title: 'Due today', text: 'Remind the assignee on the morning of the deadline.', fields: [] },
-  OVERDUE: { title: 'Overdue', text: 'Remind the assignee and the giver every day after the deadline.', fields: [] },
-  STALE: { title: 'No update for a while', text: 'Nudge the assignee to post a progress update.', fields: [{ key: 'afterDays', label: 'After', kind: 'number', unit: 'days without update' }] },
-  AWAITING_APPROVAL: { title: 'Waiting for approval', text: 'Nudge the giver when a submitted task has not been approved.', fields: [{ key: 'afterHours', label: 'After', kind: 'number', unit: 'hours' }] },
-  DAILY_DIGEST: { title: 'Daily summary', text: 'A morning summary for everyone with open tasks.', fields: [{ key: 'hour', label: 'Send at', kind: 'hour' }] },
-  GIVER_DIGEST: { title: 'Weekly summary for task givers', text: 'Where the tasks someone gave stand.', fields: [{ key: 'weekday', label: 'Day', kind: 'weekday' }, { key: 'hour', label: 'Send at', kind: 'hour' }] },
+const FIELDS: Record<string, Field[]> = {
+  GLOBAL: [{ key: 'tzOffsetMinutes', label: 'ad.r.f.tz', kind: 'zone' }, { key: 'windowStartHour', label: 'ad.r.f.from', kind: 'hour' }, { key: 'windowEndHour', label: 'ad.r.f.until', kind: 'hour' }],
+  ACCEPT_PENDING: [{ key: 'afterHours', label: 'ad.r.f.remindAfter', kind: 'number', unit: 'ad.r.unitHours' }, { key: 'escalateAfterHours', label: 'ad.r.f.tellGiver', kind: 'number', unit: 'ad.r.unitHours' }],
+  DUE_SOON: [{ key: 'beforeHours', label: 'ad.r.f.remind', kind: 'number', unit: 'ad.r.unitHoursBefore' }],
+  DUE_TODAY: [],
+  OVERDUE: [],
+  STALE: [{ key: 'afterDays', label: 'ad.r.f.after', kind: 'number', unit: 'ad.r.unitDays' }],
+  AWAITING_APPROVAL: [{ key: 'afterHours', label: 'ad.r.f.after', kind: 'number', unit: 'ad.r.unitHours' }],
+  DAILY_DIGEST: [{ key: 'hour', label: 'ad.r.f.sendAt', kind: 'hour' }],
+  GIVER_DIGEST: [{ key: 'weekday', label: 'ad.r.f.day', kind: 'weekday' }, { key: 'hour', label: 'ad.r.f.sendAt', kind: 'hour' }],
 };
 const GROUPS = [
-  { title: 'Timing', kinds: ['GLOBAL'] },
-  { title: 'Task reminders', kinds: ['ACCEPT_PENDING', 'DUE_SOON', 'DUE_TODAY', 'OVERDUE', 'STALE', 'AWAITING_APPROVAL'] },
-  { title: 'Summaries', kinds: ['DAILY_DIGEST', 'GIVER_DIGEST'] },
+  { title: 'ad.r.gTiming', kinds: ['GLOBAL'] },
+  { title: 'ad.r.gTasks', kinds: ['ACCEPT_PENDING', 'DUE_SOON', 'DUE_TODAY', 'OVERDUE', 'STALE', 'AWAITING_APPROVAL'] },
+  { title: 'ad.r.gSummaries', kinds: ['DAILY_DIGEST', 'GIVER_DIGEST'] },
 ];
 
 function Reminders() {
   const toast = useToast();
+  const { t, err } = useI18n();
   const [rules, setRules] = useState<Record<string, Rule> | null>(null);
   useEffect(() => {
-    api('/settings/reminders').then(setRules).catch((e) => toast.error(e.message));
+    api('/settings/reminders').then(setRules).catch((e) => toast.error(err(e.message)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -327,7 +322,7 @@ function Reminders() {
       setRules(await api(`/settings/reminders/${kind}`, { method: 'PUT', body: JSON.stringify({ enabled, config }) }));
       toast.ok(msg);
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(err(e.message));
     }
   }
 
@@ -335,12 +330,10 @@ function Reminders() {
 
   return (
     <>
-      <Intro title="Reminders">
-        Reminders stop tasks being forgotten. People see them in the app; if email is set up on the server they get an email too.
-      </Intro>
+      <Intro title={t('ad.r.remTitle')}>{t('ad.r.remText')}</Intro>
       {GROUPS.map((g) => (
         <div key={g.title} style={{ marginBottom: 22 }}>
-          <h2>{g.title}</h2>
+          <h2>{t(g.title)}</h2>
           <div className="list" style={{ maxWidth: 980, marginBottom: 0 }}>
             {g.kinds.map((k) => rules[k] && <RuleRow key={k} kind={k} rule={rules[k]} onSave={save} />)}
           </div>
@@ -351,60 +344,63 @@ function Reminders() {
 }
 
 function RuleRow({ kind, rule, onSave }: { kind: string; rule: Rule; onSave: (k: string, enabled: boolean, c: Record<string, number>, msg: string) => void }) {
-  const meta = META[kind] ?? { title: kind, text: '', fields: [] };
+  const { t, n, time } = useI18n();
+  const title = t(`ad.r.k.${kind}`);
+  const fields = FIELDS[kind] ?? [];
   const [cfg, setCfg] = useState<Record<string, number>>(rule.config);
   useEffect(() => setCfg(rule.config), [rule.config]);
   const dirty = JSON.stringify(cfg) !== JSON.stringify(rule.config);
   const off = kind !== 'GLOBAL' && !rule.enabled;
+  const setNum = (key: string, v: number) => setCfg({ ...cfg, [key]: v });
 
   return (
     <div className={`rrow ${off ? 'off' : ''}`}>
       <div className="rhead">
         <div className="grow">
-          <div style={{ fontWeight: 650 }}>{meta.title}</div>
-          <div className="muted">{meta.text}</div>
+          <div style={{ fontWeight: 650 }}>{title}</div>
+          <div className="muted">{t(`ad.r.k.${kind}.t`)}</div>
         </div>
         {kind !== 'GLOBAL' && (
           <button
             role="switch"
             aria-checked={rule.enabled}
-            aria-label={`${meta.title} enabled`}
+            aria-label={t('ad.r.enabled', { title })}
             className={`switch ${rule.enabled ? 'on' : ''}`}
-            onClick={() => onSave(kind, !rule.enabled, rule.config, `${meta.title}: ${rule.enabled ? 'turned off' : 'turned on'}`)}
+            onClick={() => onSave(kind, !rule.enabled, rule.config, t(rule.enabled ? 'ad.r.turnedOff' : 'ad.r.turnedOn', { title }))}
           />
         )}
       </div>
-      {meta.fields.length > 0 && (
+      {fields.length > 0 && (
         <div className="rfields">
-          {meta.fields.map((f) => (
+          {fields.map((f) => (
             <div key={f.key} className="rfield">
-              <label htmlFor={`${kind}-${f.key}`}>{f.label}</label>
+              <label htmlFor={`${kind}-${f.key}`}>{t(f.label)}</label>
               <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
-                {f.kind === 'number' && <input id={`${kind}-${f.key}`} type="number" min={0} value={cfg[f.key] ?? 0} onChange={(e) => setCfg({ ...cfg, [f.key]: Number(e.target.value) })} style={{ width: 84 }} />}
+                {f.kind === 'number' && <input id={`${kind}-${f.key}`} type="number" min={0} value={cfg[f.key] ?? 0} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 84 }} />}
                 {f.kind === 'hour' && (
-                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 8} onChange={(e) => setCfg({ ...cfg, [f.key]: Number(e.target.value) })} style={{ width: 120 }}>
-                    {HOURS.map((h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
+                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 8} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 130 }}>
+                    {HOURS.map((h) => <option key={h} value={h}>{time(new Date(2000, 0, 1, h))}</option>)}
                   </select>
                 )}
                 {f.kind === 'weekday' && (
-                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 4} onChange={(e) => setCfg({ ...cfg, [f.key]: Number(e.target.value) })} style={{ width: 130 }}>
-                    {DAYS.map((n, i) => <option key={n} value={i}>{n}</option>)}
+                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 4} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 140 }}>
+                    {[0, 1, 2, 3, 4, 5, 6].map((i) => <option key={i} value={i}>{t(`ad.r.d${i}`)}</option>)}
                   </select>
                 )}
                 {f.kind === 'zone' && (
-                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 360} onChange={(e) => setCfg({ ...cfg, [f.key]: Number(e.target.value) })} style={{ width: 200 }}>
-                    {ZONES.some((z) => z.v === cfg[f.key]) ? null : <option value={cfg[f.key]}>UTC offset {cfg[f.key]} min</option>}
-                    {ZONES.map((z) => <option key={z.v} value={z.v}>{z.l}</option>)}
+                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 360} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 210 }}>
+                    {ZONES.includes(cfg[f.key]) ? null : <option value={cfg[f.key]}>UTC {n(cfg[f.key])}</option>}
+                    {ZONES.map((z) => <option key={z} value={z}>{t(`ad.r.z${z}`)}</option>)}
                   </select>
                 )}
-                {f.unit && <span className="muted">{f.unit}</span>}
+                {f.unit && <span className="muted">{t(f.unit)}</span>}
               </div>
             </div>
           ))}
           {dirty && (
             <div className="row" style={{ gap: 8, alignSelf: 'flex-end' }}>
-              <button className="sm" onClick={() => setCfg(rule.config)}>Reset</button>
-              <button className="primary sm" onClick={() => onSave(kind, rule.enabled, cfg, `${meta.title} saved`)}>Save</button>
+              <button className="sm" onClick={() => setCfg(rule.config)}>{t('ad.r.reset')}</button>
+              <button className="primary sm" onClick={() => onSave(kind, rule.enabled, cfg, t('ad.r.ruleSaved', { title }))}>{t('ad.r.save')}</button>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 import { AuthUser, CurrentUser, Public } from './decorators';
 
@@ -9,6 +9,9 @@ class LoginDto {
 }
 class RefreshDto {
   @IsString() refreshToken: string;
+}
+class LanguageDto {
+  @IsIn(['bn', 'en']) language: string;
 }
 class ChangePasswordDto {
   @IsString() currentPassword: string;
@@ -43,6 +46,12 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.auth.me(user.id);
+  }
+
+  @HttpCode(204)
+  @Post('language')
+  async language(@CurrentUser() user: AuthUser, @Body() dto: LanguageDto) {
+    await this.auth.setLanguage(user.id, dto.language);
   }
 
   @HttpCode(204)
