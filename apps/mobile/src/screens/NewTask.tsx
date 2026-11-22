@@ -6,7 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { api, post, upload, type PickedFile } from '../api';
 import { useAuth } from '../auth';
 import { useI18n } from '../i18n';
-import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, KeyboardView, Label } from '../ui';
+import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, Icon, KeyboardView, Label } from '../ui';
 import type { Person } from '../types';
 
 type Rule = { fromPositionId: string; toPositionId: string };
@@ -113,7 +113,7 @@ export default function NewTask() {
 
         <View style={{ gap: 8 }}>
           <Label>{t('nw.who')}</Label>
-          <Btn label={chosen.length ? t('mb.chosen', { n: chosen.length }) : t('mb.pickPeople')} onPress={() => setPicker(true)} />
+          <Btn label={chosen.length ? t('mb.chosen', { n: chosen.length }) : t('mb.pickPeople')} icon="people-outline" onPress={() => setPicker(true)} />
           {chosen.length > 0 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {chosen.map((u) => (
@@ -140,10 +140,9 @@ export default function NewTask() {
         <View style={{ gap: 8 }}>
           <Label>{t('nw.deadline')}</Label>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            <Chip label={t('nw.q.today')} on={false} onPress={() => setDue(endOfDay(0))} />
-            <Chip label={t('nw.q.tomorrow')} on={false} onPress={() => setDue(endOfDay(1))} />
-            <Chip label={t('nw.q.3d')} on={false} onPress={() => setDue(endOfDay(3))} />
-            <Chip label={t('nw.q.week')} on={false} onPress={() => setDue(endOfDay(7))} />
+            {([[0, 'nw.q.today'], [1, 'nw.q.tomorrow'], [3, 'nw.q.3d'], [7, 'nw.q.week']] as const).map(([days, key]) => (
+              <Chip key={key} label={t(key)} on={!!due && due.toDateString() === endOfDay(days).toDateString()} onPress={() => setDue(endOfDay(days))} />
+            ))}
             <Chip label={t('mb.pickDate')} on={false} onPress={pickDate} />
           </View>
           {due && (
@@ -163,12 +162,12 @@ export default function NewTask() {
 
         <View style={{ gap: 8 }}>
           <Label>{t('nw.attach')}</Label>
-          <Btn label={t('mb.attachFiles')} onPress={pickFiles} />
+          <Btn label={t('mb.attachFiles')} icon="attach" onPress={pickFiles} />
           {files.map((f, i) => <Btn key={`${f.uri}${i}`} label={`✕  ${f.name}`} onPress={() => setFiles(files.filter((_, j) => j !== i))} style={{ alignItems: 'flex-start' }} />)}
         </View>
 
         <ErrorText msg={error} />
-        <Btn label={busy ? t('nw.giving') : t('nw.btn')} kind="primary" busy={busy} onPress={submit} />
+        <Btn label={busy ? t('nw.giving') : t('nw.btn')} icon="paper-plane" kind="primary" busy={busy} onPress={submit} />
       </Card>
 
       {Platform.OS === 'ios' && iosDate && (
@@ -208,7 +207,13 @@ export function PeoplePicker({ visible, people, allowed, value, onChange, onClos
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: 48 }}>
-        <View style={{ padding: 12, gap: 10 }}>
+        <View style={{ padding: 14, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: C.ink }}>{t('mb.pickPeople')}</Text>
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('c.close')} hitSlop={12}>
+              <Icon name="close" size={26} color={C.ink} />
+            </Pressable>
+          </View>
           <TextInput value={q} onChangeText={setQ} placeholder={t('pp.search')} placeholderTextColor="#94a3b8" style={s.search} accessibilityLabel={t('pp.searchLabel')} />
         </View>
         <ScrollView contentContainerStyle={{ padding: 12, gap: 8 }} keyboardShouldPersistTaps="handled">
@@ -231,7 +236,7 @@ export function PeoplePicker({ visible, people, allowed, value, onChange, onClos
                   <Text style={{ color: C.sub, fontSize: 13 }} numberOfLines={1}>{u.positions.map((p) => `${posTitle(p.position)}, ${p.unit.name}`).join(' · ')}</Text>
                   {!ok && <Text style={{ color: C.amber, fontSize: 12 }}>{t('pp.blocked')}</Text>}
                 </View>
-                <Text style={{ fontSize: 18, color: C.brand }}>{on ? '✓' : ''}</Text>
+                <Icon name={on ? 'checkmark-circle' : 'ellipse-outline'} size={24} color={on ? C.brand : '#cbd5e1'} />
               </Pressable>
             );
           })}

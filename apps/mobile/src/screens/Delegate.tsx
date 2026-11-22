@@ -79,7 +79,7 @@ export default function Delegate({ assignmentId, onDone }: { assignmentId: strin
       <Label>{t('td.passOn')}</Label>
       <Text style={{ color: C.sub }}>{t('td.passOnText')}</Text>
       {done && <Text style={{ color: C.green, fontWeight: '700' }}>{t('td.passedOn')}</Text>}
-      <Btn label={t('td.delegate')} onPress={() => { setDone(false); setOpen(true); }} />
+      <Btn label={t('td.delegate')} icon="people-outline" onPress={() => { setDone(false); setOpen(true); }} />
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <KeyboardView>
