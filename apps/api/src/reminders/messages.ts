@@ -52,7 +52,7 @@ const BN: Record<ReminderKey, Tpl> = {
   AWAITING_APPROVAL: (p) => `${p.name} "${p.title}" কাজটি জমা দিয়েছেন। আপনার অনুমোদনের অপেক্ষায় আছে।`,
   DAILY_DIGEST: (p, n) => {
     const c = p.counts;
-    const parts = [`${n(c.open)}টি খোলা কাজ`];
+    const parts = [`${n(c.open)}টি চলমান কাজ`];
     if (c.overdue) parts.push(`${n(c.overdue)}টি দেরি`);
     if (c.dueToday) parts.push(`${n(c.dueToday)}টির সময়সীমা আজ`);
     if (c.needsAccept) parts.push(`${n(c.needsAccept)}টি গ্রহণের অপেক্ষায়`);
@@ -60,7 +60,7 @@ const BN: Record<ReminderKey, Tpl> = {
   },
   GIVER_DIGEST: (p, n) => {
     const c = p.counts;
-    return `আপনার দেওয়া কাজের সাপ্তাহিক সারাংশ: ${n(c.open)}টি খোলা, ${n(c.overdue)}টি দেরি, ${n(c.awaitingApproval)}টি অনুমোদনের অপেক্ষায়, ${n(c.blocked)}টি আটকে আছে, ${n(c.notAccepted)}টি এখনো গ্রহণ করা হয়নি।`;
+    return `আপনার দেওয়া কাজের সাপ্তাহিক সারাংশ: ${n(c.open)}টি চলমান, ${n(c.overdue)}টি দেরি, ${n(c.awaitingApproval)}টি অনুমোদনের অপেক্ষায়, ${n(c.blocked)}টি আটকে আছে, ${n(c.notAccepted)}টি এখনো গ্রহণ করা হয়নি।`;
   },
 };
 

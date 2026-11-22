@@ -42,7 +42,7 @@ export const detail: Record<string, [string, string]> = {
   'td.passedOn': ['Passed on. Follow it under "Assigned by me".', 'অন্যকে দেওয়া হয়েছে। "আমার দেওয়া কাজ" থেকে অনুসরণ করুন।'],
   'td.chain': ['Passed on further', 'আরও নিচে দেওয়া হয়েছে'],
   'td.chainNone': ['Nothing has been delegated further.', 'আর নিচে কিছু দেওয়া হয়নি।'],
-  'td.chainSummary': ['{total} sub-task(s): {approved} approved, {open} open', '{total}টি সাব-টাস্ক: {approved}টি অনুমোদিত, {open}টি খোলা'],
+  'td.chainSummary': ['{total} sub-task(s): {approved} approved, {open} open', '{total}টি সাব-টাস্ক: {approved}টি অনুমোদিত, {open}টি চলমান'],
   'td.chainOverdue': [', {n} overdue', ', {n}টি দেরি'],
   'td.chainFrom': ['from {name}', 'প্রেরক: {name}'],
   'td.activity': ['Activity', 'কার্যকলাপ'],
