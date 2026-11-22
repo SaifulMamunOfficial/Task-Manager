@@ -1,10 +1,13 @@
+import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-// On a real phone use your computer's LAN address, e.g. EXPO_PUBLIC_API_URL=http://192.168.0.10:4000/api
-// (the Android emulator reaches the host computer at 10.0.2.2).
-export const BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:4000/api';
+// Set EXPO_PUBLIC_API_URL to force an address (e.g. a production server). Without it, development builds use the
+// computer that serves the app, which also works over Wi-Fi without any cable setup.
+// In development the app is served by Metro on your computer, so the API is on the same computer (port 4000).
+const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+export const BASE = process.env.EXPO_PUBLIC_API_URL ?? (devHost ? `http://${devHost}:4000/api` : 'http://10.0.2.2:4000/api');
 
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
