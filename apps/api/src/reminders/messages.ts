@@ -44,8 +44,8 @@ const EN: Record<ReminderKey, Tpl> = {
 const BN: Record<ReminderKey, Tpl> = {
   ACCEPT_PENDING: (p) => `"${p.title}" কাজটি আপনি এখনো গ্রহণ করেননি (${p.from}-এর কাছ থেকে)।`,
   ACCEPT_ESCALATION: (p, n) => `"${p.title}" কাজটি ${p.name} ${n(p.hours)} ঘণ্টার বেশি সময় ধরে গ্রহণ করেননি।`,
-  DUE_SOON: (p, n) => `"${p.title}" কাজের সময়সীমা ${n(p.hours)} ঘণ্টার মধ্যে শেষ হচ্ছে।`,
-  DUE_TODAY: (p) => `"${p.title}" কাজের সময়সীমা আজ।`,
+  DUE_SOON: (p, n) => `"${p.title}" কাজের শেষ তারিখ ${n(p.hours)} ঘণ্টার মধ্যে শেষ হচ্ছে।`,
+  DUE_TODAY: (p) => `"${p.title}" কাজের শেষ তারিখ আজ।`,
   OVERDUE: (p, n) => `"${p.title}" কাজটি ${n(p.days)} দিন দেরি হয়ে গেছে।`,
   OVERDUE_GIVER: (p, n) => `${p.name}-এর "${p.title}" কাজটি ${n(p.days)} দিন দেরি হয়ে গেছে।`,
   STALE: (p, n) => `"${p.title}" কাজে ${n(p.days)} দিন ধরে কোনো আপডেট নেই। অনুগ্রহ করে অগ্রগতি জানান।`,
@@ -54,7 +54,7 @@ const BN: Record<ReminderKey, Tpl> = {
     const c = p.counts;
     const parts = [`${n(c.open)}টি চলমান কাজ`];
     if (c.overdue) parts.push(`${n(c.overdue)}টি দেরি`);
-    if (c.dueToday) parts.push(`${n(c.dueToday)}টির সময়সীমা আজ`);
+    if (c.dueToday) parts.push(`${n(c.dueToday)}টির শেষ তারিখ আজ`);
     if (c.needsAccept) parts.push(`${n(c.needsAccept)}টি গ্রহণের অপেক্ষায়`);
     return `শুভ সকাল। আপনার ${parts.join(', ')}।`;
   },
@@ -71,6 +71,6 @@ export function reminderText(lang: Lang, key: ReminderKey, params: Params): stri
 
 const SUBJECT: Record<Lang, Record<string, string>> = {
   en: { default: 'Task Manager reminder', DAILY_DIGEST: 'Task Manager: your day', GIVER_DIGEST: 'Task Manager: weekly summary' },
-  bn: { default: 'টাস্ক ম্যানেজার: অনুস্মারক', DAILY_DIGEST: 'টাস্ক ম্যানেজার: আজকের কাজ', GIVER_DIGEST: 'টাস্ক ম্যানেজার: সাপ্তাহিক সারাংশ' },
+  bn: { default: 'টাস্ক ম্যানেজার: রিমাইন্ডার', DAILY_DIGEST: 'টাস্ক ম্যানেজার: আজকের কাজ', GIVER_DIGEST: 'টাস্ক ম্যানেজার: সাপ্তাহিক সারাংশ' },
 };
 export const reminderSubject = (lang: Lang, key: string) => SUBJECT[lang][key] ?? SUBJECT[lang].default;

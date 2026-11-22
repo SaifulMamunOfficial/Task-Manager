@@ -5,7 +5,7 @@ const num = (lang: Lang, n: number | string) => (lang === 'bn' ? String(n).repla
 
 const STATUS: Record<Lang, Record<string, string>> = {
   en: { PENDING_ACCEPTANCE: 'Not accepted yet', ACCEPTED: 'Accepted', IN_PROGRESS: 'In progress', BLOCKED: 'Blocked', SUBMITTED: 'Awaiting approval', APPROVED: 'Approved', DECLINED: 'Declined', CANCELLED: 'Cancelled' },
-  bn: { PENDING_ACCEPTANCE: 'গ্রহণ করা হয়নি', ACCEPTED: 'গ্রহণ করা হয়েছে', IN_PROGRESS: 'চলছে', BLOCKED: 'আটকে আছে', SUBMITTED: 'অনুমোদনের অপেক্ষায়', APPROVED: 'অনুমোদিত', DECLINED: 'প্রত্যাখ্যাত', CANCELLED: 'বাতিল' },
+  bn: { PENDING_ACCEPTANCE: 'গ্রহণ করা হয়নি', ACCEPTED: 'গ্রহণ করা হয়েছে', IN_PROGRESS: 'চলছে', BLOCKED: 'আটকে আছে', SUBMITTED: 'অনুমোদনের অপেক্ষায়', APPROVED: 'অনুমোদিত', DECLINED: 'ফিরিয়ে দেওয়া', CANCELLED: 'বাতিল' },
 };
 
 export const appName = (lang: Lang) => (lang === 'bn' ? 'টাস্ক ম্যানেজার' : 'Task Manager');
