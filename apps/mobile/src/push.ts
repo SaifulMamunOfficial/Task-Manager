@@ -1,31 +1,41 @@
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import { post } from './api';
 
-// Show a banner while the app is open too.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
-});
+// Expo Go (SDK 53+) no longer supports remote push and prints a red warning as soon as expo-notifications loads.
+// So the module is only loaded in a real (development or store) build.
+const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const N = () => (inExpoGo ? null : (require('expo-notifications') as typeof import('expo-notifications')));
+
+let ready = false;
+function setup() {
+  const n = N();
+  if (!n || ready) return n;
+  ready = true;
+  // Show a banner while the app is open too.
+  n.setNotificationHandler({ handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }) });
+  return n;
+}
 
 /**
  * Ask permission, get this phone's Expo push token and tell the server, so notifications reach this phone.
- * Returns 'ok', 'denied' (the person said no) or 'unsupported' (emulator / no project id).
+ * Returns 'ok', 'denied' (the person said no) or 'unsupported' (emulator, Expo Go, or no project id).
  */
 export async function registerPush(): Promise<'ok' | 'denied' | 'unsupported'> {
-  if (!Device.isDevice) return 'unsupported';
+  const n = setup();
+  if (!n || !Device.isDevice) return 'unsupported';
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', { name: 'Tasks', importance: Notifications.AndroidImportance.HIGH });
+    await n.setNotificationChannelAsync('default', { name: 'Tasks', importance: n.AndroidImportance.HIGH });
   }
-  let { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') status = (await Notifications.requestPermissionsAsync()).status;
+  let { status } = await n.getPermissionsAsync();
+  if (status !== 'granted') status = (await n.requestPermissionsAsync()).status;
   if (status !== 'granted') return 'denied';
 
-  const projectId = (Constants.expoConfig?.extra as any)?.eas?.projectId ?? (Constants as any).easConfig?.projectId;
+  const projectId = (Constants.expoConfig?.extra as any)?.eas?.projectId || (Constants as any).easConfig?.projectId;
   if (!projectId) return 'unsupported';
-  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+  const token = (await n.getExpoPushTokenAsync({ projectId })).data;
   await post('/devices/register', { token, platform: Platform.OS });
   await SecureStore.setItemAsync('pushToken', token);
   return 'ok';
@@ -41,7 +51,9 @@ export async function unregisterPush() {
 
 /** Tapping a notification should open the task it is about. */
 export function onNotificationTap(open: (assignmentId: string) => void) {
-  const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+  const n = setup();
+  if (!n) return () => {};
+  const sub = n.addNotificationResponseReceivedListener((r) => {
     // The server sends data.url like "/tasks/<assignmentId>".
     const url = String((r.notification.request.content.data as any)?.url ?? '');
     const m = url.match(/^\/tasks\/([\w-]+)/);

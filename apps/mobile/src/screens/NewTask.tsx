@@ -197,7 +197,7 @@ export default function NewTask() {
   );
 }
 
-function PeoplePicker({ visible, people, allowed, value, onChange, onClose }: { visible: boolean; people: Person[]; allowed: (u: Person) => boolean; value: string[]; onChange: (ids: string[]) => void; onClose: () => void }) {
+export function PeoplePicker({ visible, people, allowed, value, onChange, onClose }: { visible: boolean; people: Person[]; allowed: (u: Person) => boolean; value: string[]; onChange: (ids: string[]) => void; onClose: () => void }) {
   const { t, posTitle } = useI18n();
   const [q, setQ] = useState('');
   const list = people

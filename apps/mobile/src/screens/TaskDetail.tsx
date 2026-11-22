@@ -5,6 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { api, downloadAndOpen, post, upload, type PickedFile } from '../api';
 import { useI18n } from '../i18n';
 import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, Label, Progress, ReasonModal, StatusPill } from '../ui';
+import Delegate from './Delegate';
 import { ASSIGNEE_TRANSITIONS, GIVER_TRANSITIONS, type Detail, type FileMeta } from '../types';
 
 const STEPS = [0, 25, 50, 75, 100];
@@ -201,6 +202,8 @@ export default function TaskDetail() {
           </View>
         </Card>
       )}
+
+      {isAssignee && ['ACCEPTED', 'IN_PROGRESS', 'BLOCKED'].includes(a.status) && <Delegate assignmentId={id} onDone={load} />}
 
       {d.chain?.summary && (
         <Card style={{ gap: 6 }}>
