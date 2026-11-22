@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from './src/api';
 import { AuthProvider, useAuth } from './src/auth';
 import { I18nProvider, useI18n } from './src/i18n';
 import { onNotificationTap } from './src/push';
-import { C } from './src/ui';
+import { C, Icon, type IconName } from './src/ui';
 import Login from './src/screens/Login';
 import ChangePassword from './src/screens/ChangePassword';
 import Today from './src/screens/Today';
@@ -29,7 +29,7 @@ const ForcedPassword = () => <ChangePassword forced />;
 
 function Tabs() {
   const { t } = useI18n();
-  const { canGive } = useAuth();
+  const insets = useSafeAreaInsets();
   const [unread, setUnread] = useState(0);
 
   // A light poll keeps the bell badge current while the app is open.
@@ -44,21 +44,26 @@ function Tabs() {
     };
   }, []);
 
-  const newBtn = canGive
-    ? () => (
-        <Pressable onPress={() => navRef.current?.navigate('NewTask')} accessibilityRole="button" accessibilityLabel={t('nav.newTask')} style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
-          <Text style={{ color: C.brand, fontWeight: '800', fontSize: 15 }}>+ {t('nav.newTask')}</Text>
-        </Pressable>
-      )
-    : undefined;
+  const icon = (on: IconName, off: IconName) => ({ focused, color }: { focused: boolean; color: string }) => <Icon name={focused ? on : off} size={24} color={color} />;
 
   return (
-    <Tab.Navigator screenOptions={{ tabBarActiveTintColor: C.brand, headerTitleStyle: { fontWeight: '800' }, tabBarLabelStyle: { fontSize: 11.5, fontWeight: '600' } }}>
-      <Tab.Screen name="Today" component={Today} options={{ title: t('nav.today'), tabBarIcon: () => <Text>◉</Text> }} />
-      <Tab.Screen name="Mine" component={MineScreen} options={{ title: t('nav.myTasks'), headerRight: newBtn, tabBarIcon: () => <Text>☑</Text> }} />
-      <Tab.Screen name="Given" component={GivenScreen} options={{ title: t('nav.given'), headerRight: newBtn, tabBarIcon: () => <Text>➤</Text> }} />
-      <Tab.Screen name="Notifications" component={Notifications} options={{ title: t('nav.notifications'), tabBarBadge: unread > 0 ? unread : undefined, tabBarIcon: () => <Text>🔔</Text> }} />
-      <Tab.Screen name="Account" component={Account} options={{ title: t('mb.me'), tabBarIcon: () => <Text>●</Text> }} />
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: C.brand,
+        tabBarInactiveTintColor: '#94a3b8',
+        headerTitleStyle: { fontWeight: '800', fontSize: 20, color: C.ink },
+        headerStyle: { backgroundColor: '#fff', elevation: 0, shadowOpacity: 0 },
+        headerTitleAlign: 'left',
+        tabBarLabelStyle: { fontSize: 11.5, fontWeight: '700' },
+        tabBarStyle: { height: 62 + insets.bottom, paddingTop: 6, paddingBottom: 6 + insets.bottom, borderTopColor: C.line, backgroundColor: '#fff' },
+        tabBarBadgeStyle: { backgroundColor: C.red, color: '#fff', fontWeight: '800', fontSize: 10, minWidth: 18, height: 18, lineHeight: 17, borderRadius: 9, top: -2 },
+      }}
+    >
+      <Tab.Screen name="Today" component={Today} options={{ title: t('mb.tab.today'), headerShown: false, tabBarIcon: icon('home', 'home-outline') }} />
+      <Tab.Screen name="Mine" component={MineScreen} options={{ title: t('nav.myTasks'), tabBarLabel: t('mb.tab.mine'), tabBarIcon: icon('checkbox', 'checkbox-outline') }} />
+      <Tab.Screen name="Given" component={GivenScreen} options={{ title: t('nav.given'), tabBarLabel: t('mb.tab.given'), tabBarIcon: icon('paper-plane', 'paper-plane-outline') }} />
+      <Tab.Screen name="Notifications" component={Notifications} options={{ title: t('nav.notifications'), tabBarLabel: t('mb.tab.alerts'), tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined, tabBarIcon: icon('notifications', 'notifications-outline') }} />
+      <Tab.Screen name="Account" component={Account} options={{ title: t('mb.me'), tabBarIcon: icon('person-circle', 'person-circle-outline') }} />
     </Tab.Navigator>
   );
 }
