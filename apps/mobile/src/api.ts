@@ -31,10 +31,13 @@ export async function clearTokens() {
 export const currentRefreshToken = () => refreshToken;
 
 let refreshing: Promise<boolean> | null = null;
+/** True when the last refresh failed only because the network was down (the session may still be fine). */
+let refreshOffline = false;
 function tryRefresh(): Promise<boolean> {
   // Several requests can fail at once; they all wait for the same refresh (refresh tokens rotate, so it must run once).
   if (!refreshing) {
     refreshing = (async () => {
+      refreshOffline = false;
       if (!refreshToken) return false;
       try {
         const res = await fetch(`${BASE}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken }) });
@@ -42,6 +45,7 @@ function tryRefresh(): Promise<boolean> {
         await saveTokens(await res.json());
         return true;
       } catch {
+        refreshOffline = true;
         return false;
       }
     })().finally(() => {
@@ -60,7 +64,8 @@ async function authed(path: string, init: RequestInit = {}, json = true): Promis
   let res = await make();
   if (res.status === 401) {
     if (await tryRefresh()) res = await make();
-    else if (accessToken) {
+    else if (accessToken && !refreshOffline) {
+      // The server rejected the sign-in (not just a dropped connection): sign out.
       await clearTokens();
       onSessionLost();
     }
@@ -70,7 +75,9 @@ async function authed(path: string, init: RequestInit = {}, json = true): Promis
 
 async function fail(res: Response): Promise<never> {
   const body = await res.json().catch(() => ({}));
-  throw new Error(Array.isArray(body.message) ? body.message.join(', ') : body.message ?? `HTTP ${res.status}`);
+  const e: any = new Error(Array.isArray(body.message) ? body.message.join(', ') : body.message ?? `HTTP ${res.status}`);
+  e.status = res.status;
+  throw e;
 }
 
 export async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {

@@ -9,6 +9,7 @@ type AuthCtx = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   reload: () => Promise<void>;
+  offline: boolean;
   /** Can this person give tasks to anyone? null while unknown. */
   canGive: boolean | null;
 };
@@ -19,13 +20,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [ready, setReady] = useState(false);
   const [canGive, setCanGive] = useState<boolean | null>(null);
+  /** The server could not be reached (as opposed to the session being rejected). */
+  const [offline, setOffline] = useState(false);
 
   const reload = useCallback(async () => {
     try {
       setMe(await api<Me>('/auth/me'));
-    } catch {
-      await clearTokens();
-      setMe(null);
+      setOffline(false);
+    } catch (e: any) {
+      if (e?.status === 401 || e?.status === 403) {
+        await clearTokens();
+        setMe(null);
+        setOffline(false);
+      } else {
+        // No connection or a server hiccup: keep the saved sign-in and let the person retry.
+        setOffline(true);
+      }
     }
   }, []);
 
@@ -60,5 +70,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMe(null);
   };
 
-  return <Ctx.Provider value={{ me, ready, login, logout, reload, canGive }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ me, ready, login, logout, reload, canGive, offline }}>{children}</Ctx.Provider>;
 }

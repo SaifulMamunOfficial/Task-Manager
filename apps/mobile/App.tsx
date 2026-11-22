@@ -9,7 +9,7 @@ import { api } from './src/api';
 import { AuthProvider, useAuth } from './src/auth';
 import { I18nProvider, useI18n } from './src/i18n';
 import { onNotificationTap } from './src/push';
-import { C, Icon, type IconName } from './src/ui';
+import { Btn, C, Empty, Icon, type IconName } from './src/ui';
 import Login from './src/screens/Login';
 import ChangePassword from './src/screens/ChangePassword';
 import Today from './src/screens/Today';
@@ -78,18 +78,27 @@ function Tabs() {
       <Tab.Screen name="Mine" component={MineScreen} options={{ title: t('nav.myTasks'), tabBarLabel: t('mb.tab.mine'), tabBarIcon: icon('checkbox', 'checkbox-outline') }} />
       <Tab.Screen name="Given" component={GivenScreen} options={{ title: t('nav.given'), tabBarLabel: t('mb.tab.given'), tabBarIcon: icon('paper-plane', 'paper-plane-outline') }} />
       <Tab.Screen name="Notifications" component={Notifications} options={{ title: t('nav.notifications'), tabBarLabel: t('mb.tab.alerts'), tabBarBadge: unread > 0 ? (unread > 99 ? '99+' : unread) : undefined, tabBarIcon: icon('notifications', 'notifications-outline') }} />
-      <Tab.Screen name="Account" component={Account} options={{ title: t('mb.me'), tabBarIcon: icon('person-circle', 'person-circle-outline') }} />
+      <Tab.Screen name="Account" component={Account} options={{ title: t('mb.me'), headerShown: false, tabBarIcon: icon('person-circle', 'person-circle-outline') }} />
     </Tab.Navigator>
   );
 }
 
 function Root() {
-  const { me, ready } = useAuth();
+  const { me, ready, offline, reload } = useAuth();
   const { t } = useI18n();
 
   // Tapping a push notification opens that task.
   const pending = useRef<string | null>(null);
   useEffect(() => onNotificationTap((id) => (navRef.isReady() ? navRef.navigate('TaskDetail', { id }) : (pending.current = id))), []);
+
+  if (ready && !me && offline) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.bg, padding: 24, gap: 16 }}>
+        <Empty title={t('mb.offline')} text={t('mb.offlineText')} icon="cloud-offline-outline" />
+        <Btn label={t('mb.retry')} kind="primary" icon="refresh" onPress={() => reload()} />
+      </View>
+    );
+  }
 
   if (!ready) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator size="large" color={C.brand} /></View>;
 
