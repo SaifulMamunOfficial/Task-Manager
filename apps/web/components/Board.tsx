@@ -59,16 +59,13 @@ export default function Board({ rows, who }: { rows: any[]; who: 'mine' | 'given
   );
 }
 
-/** List / Board switch, remembered per device. */
+/** List / Board dropdown, remembered per device. Looks and behaves like the other filter dropdowns. */
 export function ViewSwitch({ value, onChange }: { value: 'list' | 'board'; onChange: (v: 'list' | 'board') => void }) {
   const { t } = useI18n();
   return (
-    <div className="seg" role="radiogroup" aria-label={t('bd.view')}>
-      {(['list', 'board'] as const).map((v) => (
-        <button key={v} role="radio" aria-checked={value === v} className={value === v ? 'on' : ''} onClick={() => onChange(v)}>
-          {t(`bd.${v}`)}
-        </button>
-      ))}
-    </div>
+    <select value={value} onChange={(e) => onChange(e.target.value as 'list' | 'board')} style={{ width: 'auto' }} aria-label={t('bd.view')}>
+      <option value="list">{t('bd.list')}</option>
+      <option value="board">{t('bd.board')}</option>
+    </select>
   );
 }

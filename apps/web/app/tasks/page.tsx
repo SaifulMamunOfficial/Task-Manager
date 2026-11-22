@@ -139,7 +139,7 @@ export default function MyTasks() {
               </select>
             )}
             {view === 'list' && (q || filter !== 'open') && <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>{t('c.reset')}</button>}
-            <span style={{ marginLeft: 'auto' }}><ViewSwitch value={view} onChange={setView} /></span>
+            <ViewSwitch value={view} onChange={setView} />
           </div>
 
           {view === 'board' ? (
