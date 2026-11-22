@@ -69,6 +69,12 @@ export const tasks: Record<string, [string, string]> = {
   'dk.nothing': ['Nothing yet.', 'এখনো কিছু নেই।'],
   'dk.chartDay': ['{day}: {n}', '{day}: {n}টি'],
 
+  // board view
+  'bd.view': ['View', 'দেখার ধরন'],
+  'bd.list': ['List', 'তালিকা'],
+  'bd.board': ['Board', 'বোর্ড'],
+  'bd.empty': ['Nothing here', 'এখানে কিছু নেই'],
+
   // My tasks
   'mt.title': ['My tasks', 'আমার কাজ'],
   'mt.sub': ['Everything that has been given to you.', 'আপনাকে যা কিছু দেওয়া হয়েছে।'],
