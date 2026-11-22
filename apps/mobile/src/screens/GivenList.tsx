@@ -131,58 +131,43 @@ export default function GivenList() {
           const late = g.rows.some(isLate);
           const avg = Math.round(g.rows.reduce((sum, a) => sum + a.progressPercent, 0) / g.rows.length);
           const accent = late ? C.red : waiting ? C.amber : statusColor(g.rows[0].status);
+          const many = g.rows.length > 1;
           return (
             <View style={[s.card, SH]}>
-              <View style={{ width: 5, backgroundColor: accent }} />
-              <View style={{ flex: 1, padding: 14, gap: 12 }}>
-                <View style={{ gap: 6 }}>
+              <View style={{ width: 4, backgroundColor: accent }} />
+              <View style={{ flex: 1, padding: 12, gap: 10 }}>
+                <View style={{ gap: 4 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                     <Text style={s.title} numberOfLines={2}>{g.task.title}</Text>
-                    {g.task.priority === 'URGENT' && (
-                      <View style={s.urgent}>
-                        <Icon name="flame" size={12} color={C.red} />
-                        <Text style={{ color: C.red, fontSize: 12, fontWeight: '800' }}>{t('prio.URGENT')}</Text>
-                      </View>
-                    )}
+                    {g.task.priority === 'URGENT' && <Icon name="flame" size={18} color={C.red} />}
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Icon name="calendar-outline" size={14} color={late ? C.red : C.sub} />
-                      <Text style={{ color: late ? C.red : due.tone === 'soon' ? C.amber : C.sub, fontSize: 13, fontWeight: late ? '800' : '600' }}>{due.text}</Text>
-                    </View>
-                    {g.rows.length > 1 && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Icon name="people-outline" size={14} color={C.sub} />
-                        <Text style={{ color: C.sub, fontSize: 13, fontWeight: '600' }}>{t('mb.gv.people', { n: g.rows.length })}</Text>
-                      </View>
-                    )}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <Icon name="calendar-outline" size={13} color={late ? C.red : C.sub} />
+                    <Text style={{ color: late ? C.red : due.tone === 'soon' ? C.amber : C.sub, fontSize: 12.5, fontWeight: late ? '800' : '600' }}>{due.text}</Text>
+                    {many && <Text style={{ color: C.sub, fontSize: 12.5 }}>· {t('mb.gv.people', { n: g.rows.length })} · {t('mb.gv.avg', { n: avg })}</Text>}
                   </View>
-                  {g.rows.length > 1 && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Progress value={avg} />
-                      <Text style={{ color: C.sub, fontSize: 12, fontWeight: '700' }}>{t('mb.gv.avg', { n: avg })}</Text>
-                    </View>
-                  )}
                 </View>
 
-                <View style={{ gap: 2 }}>
+                <View style={s.people}>
                   {g.rows.map((a, i) => (
-                    <View key={a.id} style={[s.person, i > 0 && { borderTopWidth: 1, borderTopColor: C.line }]}>
-                      <Pressable onPress={() => nav.navigate('TaskDetail', { id: a.id })} accessibilityRole="button" style={({ pressed }) => [s.personMain, pressed && { opacity: 0.85 }]}>
-                        <Avatar name={a.assignee?.name ?? '?'} size={34} />
-                        <View style={{ flex: 1, gap: 4 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View key={a.id} style={i > 0 && { borderTopWidth: 1, borderTopColor: C.line }}>
+                      <Pressable onPress={() => nav.navigate('TaskDetail', { id: a.id })} accessibilityRole="button" style={({ pressed }) => [s.person, pressed && { opacity: 0.85 }]}>
+                        <Avatar name={a.assignee?.name ?? '?'} size={30} />
+                        <View style={{ flex: 1, gap: 6 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                             <Text style={{ color: C.ink, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{a.assignee?.name}</Text>
-                            <Text style={{ color: C.sub, fontSize: 12.5, fontWeight: '700' }}>{n(a.progressPercent)}%</Text>
+                            <StatusPill status={a.status} />
                           </View>
-                          <StatusPill status={a.status} />
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Progress value={a.progressPercent} />
+                            <Text style={{ color: C.sub, fontSize: 12, fontWeight: '700', minWidth: 34, textAlign: 'right' }}>{n(a.progressPercent)}%</Text>
+                          </View>
                         </View>
-                        <Icon name="chevron-forward" size={18} color="#94a3b8" />
                       </Pressable>
                       {a.status === 'SUBMITTED' && (
-                        <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 8 }}>
-                          <Btn label={t('act.APPROVED')} kind="primary" icon="checkmark-done" busy={busyId === a.id} onPress={() => move(a, 'APPROVED').catch((e) => setError(err(e.message)))} style={{ flex: 1, minHeight: 42 }} />
-                          <Btn label={t('act.sendBack')} onPress={() => setSendBack(a)} style={{ flex: 1, minHeight: 42 }} />
+                        <View style={{ flexDirection: 'row', gap: 8, paddingBottom: 10 }}>
+                          <Btn label={t('act.APPROVED')} kind="primary" icon="checkmark-done" busy={busyId === a.id} onPress={() => move(a, 'APPROVED').catch((e) => setError(err(e.message)))} style={{ flex: 1, minHeight: 40 }} />
+                          <Btn label={t('act.sendBack')} onPress={() => setSendBack(a)} style={{ flex: 1, minHeight: 40 }} />
                         </View>
                       )}
                     </View>
@@ -212,8 +197,8 @@ const s = StyleSheet.create({
   search: { flex: 1, fontSize: 15, color: C.ink, paddingVertical: 8 },
   alert: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.amberSoft, borderRadius: 16, padding: 14 },
   card: { backgroundColor: '#fff', borderRadius: 18, flexDirection: 'row', overflow: 'hidden' },
-  title: { flex: 1, fontSize: 16.5, fontWeight: '800', color: C.ink, lineHeight: 23 },
+  title: { flex: 1, fontSize: 16, fontWeight: '800', color: C.ink, lineHeight: 22 },
   urgent: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: C.redSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-  person: { paddingTop: 8 },
-  personMain: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 10 },
+  people: { backgroundColor: C.graySoft, borderRadius: 14, paddingHorizontal: 10 },
+  person: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
 });
