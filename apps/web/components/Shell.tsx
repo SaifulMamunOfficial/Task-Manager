@@ -36,6 +36,14 @@ export default function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [section, setSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    const on = (e: Event) => setSection((e as CustomEvent<string>).detail);
+    window.addEventListener('tm:section', on);
+    return () => window.removeEventListener('tm:section', on);
+  }, []);
+  useEffect(() => setSection(null), [path]);
 
   const isLogin = path === '/login';
 
@@ -101,7 +109,9 @@ export default function Shell({ children }: { children: ReactNode }) {
   const nav = me.isAdmin ? ADMIN_NAV : USER_NAV;
   const locked = me.mustChangePassword;
   const role = me.isAdmin ? t('nav.admin') : me.positions.map((p) => posTitle(p.position)).join(', ') || t('nav.noPosition');
-  const active = (item: NavItem) => (item.exact ? path === item.href : path.startsWith(item.href));
+  // A task page highlights the section the task belongs to, not always "My tasks".
+  const inTask = /^\/tasks\/[^/]+/.test(path);
+  const active = (item: NavItem) => (inTask && section ? item.href === section : item.exact ? path === item.href : path.startsWith(item.href));
 
   return (
     <div className="app">

@@ -31,8 +31,11 @@ export default function TaskDetail() {
 
   const load = useCallback(async () => {
     try {
-      setD(await api(`/assignments/${id}`));
+      const detail = await api(`/assignments/${id}`);
+      setD(detail);
       setError('');
+      // Tell the sidebar which section this task belongs to ("Assigned by me" or "My tasks").
+      window.dispatchEvent(new CustomEvent('tm:section', { detail: detail.role === 'giver' ? '/given' : '/tasks' }));
     } catch (e: any) {
       if (/not found/i.test(e.message)) setNotFound(true);
       else setError(e.message);

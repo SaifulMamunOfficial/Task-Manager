@@ -472,3 +472,23 @@ html[lang='bn'] body { line-height: 1.6; }
 .acct-lang .langsw { margin: 0 !important; }
 .acct-item { display: flex; align-items: center; gap: 10px; width: 100%; height: auto; padding: 9px 10px; border: 0; background: transparent; color: #cbd5e1; border-radius: 9px; font-weight: 500; justify-content: flex-start; text-decoration: none; }
 .acct-item:hover { background: #1e293b; color: #fff; text-decoration: none; border: 0; }
+
+/* ---------- board (kanban) view ---------- */
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 12px; align-items: start; scroll-snap-type: x proximity; }
+.bcol { background: #eceff6; border-radius: var(--radius); padding: 10px; scroll-snap-align: start; min-height: 120px; }
+.bcol-h { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: var(--text-2); padding: 2px 4px 10px; }
+.bcol-h .count { margin-left: auto; background: #fff; border-radius: 99px; padding: 0 8px; font-size: 12px; color: var(--muted); }
+.bcol-h .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); }
+.bcol.amber .dot { background: #d97706; } .bcol.blue .dot { background: var(--accent); }
+.bcol.red .dot { background: #dc2626; } .bcol.green .dot { background: #16a34a; }
+.bcol-b { display: flex; flex-direction: column; gap: 8px; }
+.bempty { color: var(--muted); font-size: 13px; text-align: center; padding: 18px 6px; }
+.bcard { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: box-shadow .15s, transform .15s, border-color .15s; }
+.bcard:hover { border-color: #b6c0d1; box-shadow: 0 4px 14px rgba(15, 23, 42, .1); transform: translateY(-1px); text-decoration: none; }
+.bcard .bt { font-weight: 650; font-size: 14px; line-height: 1.35; color: var(--text); }
+.bcard .bm { display: flex; align-items: center; gap: 8px; font-size: 12.5px; flex-wrap: wrap; }
+.bcard .bf { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.bcard .who { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.bcard .who span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bcard .pct { font-weight: 700; }
+.view-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }

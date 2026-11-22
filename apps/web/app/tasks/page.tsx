@@ -7,6 +7,7 @@ import { useI18n } from '../../lib/i18n';
 import { OPEN, isOverdue } from '../../lib/ui';
 import { Empty, Err, GroupHead, ListHead, PageHead, Skeleton, TaskRow } from '../../components/bits';
 import { Icon } from '../../components/icons';
+import Board, { ViewSwitch } from '../../components/Board';
 
 const FILTERS = ['open', 'overdue', 'today', 'week', 'closed'];
 
@@ -57,6 +58,18 @@ export default function MyTasks() {
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<'due' | 'newest'>('due');
   const [error, setError] = useState('');
+  const [view, setViewState] = useState<'list' | 'board'>('list');
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('tm:view') === 'board') setViewState('board');
+    } catch {}
+  }, []);
+  const setView = (v: 'list' | 'board') => {
+    setViewState(v);
+    try {
+      localStorage.setItem('tm:view', v);
+    } catch {}
+  };
 
   useEffect(() => {
     const f = new URLSearchParams(window.location.search).get('f');
@@ -106,27 +119,32 @@ export default function MyTasks() {
 
       {all !== null && !neverHadTasks && (
         <>
-          <div className="tabs" role="tablist">
+          {view === 'list' && <div className="tabs" role="tablist">
             {FILTERS.map((f) => (
               <button key={f} role="tab" aria-selected={filter === f} className={`tab ${filter === f ? 'on' : ''}`} onClick={() => setFilter(f)}>
                 {t(`f.${f}`)}
                 <span className={`n ${f === 'overdue' && counts.overdue > 0 ? 'alert' : ''}`}>{n(counts[f])}</span>
               </button>
             ))}
-          </div>
+          </div>}
           <div className="toolbar">
             <div className="search">
               <Icon name="search" />
               <input type="search" placeholder={t('mt.search')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('mt.searchLabel')} />
             </div>
-            <select value={sort} onChange={(e) => setSort(e.target.value as any)} style={{ width: 'auto' }} aria-label={t('mt.sortLabel')}>
-              <option value="due">{t('mt.groupBy')}</option>
-              <option value="newest">{t('mt.newest')}</option>
-            </select>
-            {(q || filter !== 'open') && <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>{t('c.reset')}</button>}
+            {view === 'list' && (
+              <select value={sort} onChange={(e) => setSort(e.target.value as any)} style={{ width: 'auto' }} aria-label={t('mt.sortLabel')}>
+                <option value="due">{t('mt.groupBy')}</option>
+                <option value="newest">{t('mt.newest')}</option>
+              </select>
+            )}
+            {view === 'list' && (q || filter !== 'open') && <button className="ghost" onClick={() => { setQ(''); setFilter('open'); }}>{t('c.reset')}</button>}
+            <span style={{ marginLeft: 'auto' }}><ViewSwitch value={view} onChange={setView} /></span>
           </div>
 
-          {list.length === 0 ? (
+          {view === 'board' ? (
+            <Board who="mine" rows={(all ?? []).filter((a) => !['DECLINED', 'CANCELLED'].includes(a.status) && (!q.trim() || (a.task.title + ' ' + (a.assignedBy?.name ?? '')).toLowerCase().includes(q.trim().toLowerCase())))} />
+          ) : list.length === 0 ? (
             q ? (
               <Empty title={t('mt.noMatch')} icon="search" actions={<button onClick={() => setQ('')}>{t('c.clearSearch')}</button>}>
                 {t('mt.tryOther')}
