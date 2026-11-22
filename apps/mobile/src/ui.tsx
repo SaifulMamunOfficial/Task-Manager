@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { useI18n } from './i18n';
 
 export const C = {
@@ -77,6 +77,15 @@ export function Btn({ label, onPress, kind = 'default', disabled, busy, style }:
   );
 }
 
+/** Lifts the content above the on-screen keyboard (Android does not resize the window by itself in newer builds). */
+export function KeyboardView({ children }: { children: ReactNode }) {
+  return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      {children}
+    </KeyboardAvoidingView>
+  );
+}
+
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[s.card, style]}>{children}</View>;
 }
@@ -137,7 +146,7 @@ export function ReasonModal({ visible, title, hint, confirmLabel, danger, onConf
   }
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={s.backdrop}>
+      <KeyboardAvoidingView style={s.backdrop} behavior="padding">
         <View style={[s.card, { gap: 12 }]}>
           <Text style={{ fontSize: 18, fontWeight: '700', color: C.ink }}>{title}</Text>
           {!!hint && <Text style={{ color: C.sub }}>{hint}</Text>}
@@ -148,7 +157,7 @@ export function ReasonModal({ visible, title, hint, confirmLabel, danger, onConf
             <Btn label={confirmLabel} kind={danger ? 'danger' : 'primary'} busy={busy} disabled={!text.trim()} onPress={go} />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

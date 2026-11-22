@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { useAuth } from '../auth';
 import { useI18n } from '../i18n';
 import { Btn, C, Card, ErrorText, Field } from '../ui';
@@ -26,7 +26,7 @@ export default function Login() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior="padding">
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: 'center', gap: 6 }}>
           <Text style={{ fontSize: 26, fontWeight: '800', color: C.ink }}>{t('app.name')}</Text>

@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import * as DocumentPicker from 'expo-document-picker';
 import { api, downloadAndOpen, post, upload, type PickedFile } from '../api';
 import { useI18n } from '../i18n';
-import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, Label, Progress, ReasonModal, StatusPill } from '../ui';
+import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, KeyboardView, Label, Progress, ReasonModal, StatusPill } from '../ui';
 import Delegate from './Delegate';
 import { ASSIGNEE_TRANSITIONS, GIVER_TRANSITIONS, type Detail, type FileMeta } from '../types';
 
@@ -129,6 +129,7 @@ export default function TaskDetail() {
   );
 
   return (
+    <KeyboardView>
     <ScrollView
       style={{ flex: 1, backgroundColor: C.bg }}
       contentContainerStyle={{ padding: 12, gap: 12, paddingBottom: 40 }}
@@ -270,6 +271,7 @@ export default function TaskDetail() {
         onClose={() => setReason(null)}
       />
     </ScrollView>
+    </KeyboardView>
   );
 }
 

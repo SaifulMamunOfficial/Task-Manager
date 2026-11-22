@@ -6,7 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { api, post, upload, type PickedFile } from '../api';
 import { useAuth } from '../auth';
 import { useI18n } from '../i18n';
-import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, Label } from '../ui';
+import { Avatar, Btn, C, Card, Chip, Empty, ErrorText, Field, KeyboardView, Label } from '../ui';
 import type { Person } from '../types';
 
 type Rule = { fromPositionId: string; toPositionId: string };
@@ -105,6 +105,7 @@ export default function NewTask() {
   const chosen = assignees.map((id) => people.find((p) => p.id === id)).filter(Boolean) as Person[];
 
   return (
+    <KeyboardView>
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 12, gap: 12, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       <Card style={{ gap: 14 }}>
         <Field label={t('nw.what')} value={title} onChangeText={setTitle} placeholder={t('nw.titlePh')} />
@@ -194,6 +195,7 @@ export default function NewTask() {
 
       <PeoplePicker visible={picker} people={people.filter((u) => u.id !== me?.id)} allowed={allowed} value={assignees} onChange={setAssignees} onClose={() => setPicker(false)} />
     </ScrollView>
+    </KeyboardView>
   );
 }
 

@@ -3,7 +3,7 @@ import { ScrollView, Text } from 'react-native';
 import { post } from '../api';
 import { useAuth } from '../auth';
 import { useI18n } from '../i18n';
-import { Btn, C, Card, ErrorText, Field } from '../ui';
+import { Btn, C, Card, ErrorText, Field, KeyboardView } from '../ui';
 
 /** Shown on its own (before anything else) when the password is temporary, and reachable from the account screen. */
 export default function ChangePassword({ forced }: { forced?: boolean }) {
@@ -33,6 +33,7 @@ export default function ChangePassword({ forced }: { forced?: boolean }) {
   }
 
   return (
+    <KeyboardView>
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, gap: 12, flexGrow: forced ? 1 : undefined, justifyContent: forced ? 'center' : undefined }} keyboardShouldPersistTaps="handled">
       <Card style={{ gap: 14 }}>
         {forced && <Text style={{ color: C.amber, fontWeight: '700' }}>{t('mb.mustChange')}</Text>}
@@ -44,5 +45,6 @@ export default function ChangePassword({ forced }: { forced?: boolean }) {
       </Card>
       {forced && <Btn label={t('nav.signOut')} onPress={() => logout()} />}
     </ScrollView>
+    </KeyboardView>
   );
 }

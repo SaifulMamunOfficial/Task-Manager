@@ -4,7 +4,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { api, post } from '../api';
 import { useAuth } from '../auth';
 import { useI18n } from '../i18n';
-import { Btn, C, Card, Chip, ErrorText, Field, Label } from '../ui';
+import { Btn, C, Card, Chip, ErrorText, Field, KeyboardView, Label } from '../ui';
 import type { Person } from '../types';
 import { PeoplePicker } from './NewTask';
 
@@ -82,6 +82,7 @@ export default function Delegate({ assignmentId, onDone }: { assignmentId: strin
       <Btn label={t('td.delegate')} onPress={() => { setDone(false); setOpen(true); }} />
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+        <KeyboardView>
         <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingTop: 56, gap: 14 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 20, fontWeight: '800', color: C.ink }}>{t('td.delegateTitle')}</Text>
 
@@ -113,6 +114,7 @@ export default function Delegate({ assignmentId, onDone }: { assignmentId: strin
           <Btn label={busy ? t('td.sending') : t('td.delegateBtn')} kind="primary" busy={busy} onPress={submit} />
           <Btn label={t('c.cancel')} onPress={() => setOpen(false)} />
         </ScrollView>
+        </KeyboardView>
 
         {Platform.OS === 'ios' && iosDate && (
           <Modal transparent animationType="slide" onRequestClose={() => setIosDate(false)}>
