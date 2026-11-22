@@ -547,3 +547,10 @@ html[lang='bn'] body { line-height: 1.6; }
 .theme-btn.on-dark { margin-left: auto; background: transparent; border-color: #1e293b; color: #94a3b8; }
 .theme-btn.on-dark:hover { background: var(--sidebar-2); color: #fff; border-color: #334155; }
 .auth-lang { display: flex; align-items: center; gap: 10px; }
+
+.brand-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brand-tools { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.brand-tools .theme-btn.on-dark { margin-left: 0; }
+.lang-btn { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.side-tools { display: flex; align-items: center; gap: 8px; padding: 0 4px 10px; }
+.side-tools .theme-btn.on-dark { margin-left: 0; }

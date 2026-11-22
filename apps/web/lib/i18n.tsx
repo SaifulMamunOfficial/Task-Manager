@@ -167,3 +167,14 @@ export function LangSwitch({ compact }: { compact?: boolean }) {
     </div>
   );
 }
+
+/** One-tap language button: shows the language you would switch TO ("EN" while in Bangla, "বাং" while in English). */
+export function LangToggle({ className = '' }: { className?: string }) {
+  const { lang, setLang, t } = useI18n();
+  const next = lang === 'bn' ? 'en' : 'bn';
+  return (
+    <button type="button" className={`theme-btn lang-btn ${className}`} aria-label={t('c.langToggle')} title={t('c.langToggle')} onClick={() => setLang(next)}>
+      {next === 'en' ? 'EN' : 'বাং'}
+    </button>
+  );
+}

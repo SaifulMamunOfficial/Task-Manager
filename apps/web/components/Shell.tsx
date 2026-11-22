@@ -4,8 +4,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { LangSwitch, useI18n } from '../lib/i18n';
-import { ThemeSwitch, ThemeToggle } from '../lib/theme';
+import { LangToggle, useI18n } from '../lib/i18n';
+import { ThemeToggle } from '../lib/theme';
 import { Avatar } from './bits';
 import { Icon, type IconName } from './icons';
 
@@ -120,7 +120,6 @@ export default function Shell({ children }: { children: ReactNode }) {
         <div className="brand">
           <span className="brand-mark"><Icon name="check" size={18} /></span>
           {t('app.name')}
-          <ThemeToggle className="on-dark" />
         </div>
         {!locked && !me.isAdmin && canGive && (
           <Link href="/new" className="btn primary side-new">
@@ -143,16 +142,12 @@ export default function Shell({ children }: { children: ReactNode }) {
           </nav>
         )}
         <div className="sidebar-foot" ref={menuRef}>
+          <div className="side-tools">
+            <LangToggle className="on-dark" />
+            <ThemeToggle className="on-dark" />
+          </div>
           {menu && (
             <div className="acct-menu" role="menu" aria-label={me.name}>
-              <div className="acct-lang">
-                <span>{t('c.langLabel')}</span>
-                <LangSwitch compact />
-              </div>
-              <div className="acct-lang">
-                <span>{t('th.label')}</span>
-                <ThemeSwitch />
-              </div>
               {!locked && (
                 <Link href="/account" className="acct-item" role="menuitem">
                   <Icon name="bell" /> {t('nav.account')}
@@ -187,6 +182,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           </button>
           <strong>{t('app.name')}</strong>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <LangToggle />
           <ThemeToggle />
           {!locked && !me.isAdmin && canGive ? (
             <Link href="/new" className="btn primary" aria-label={t('nav.newTask')} style={{ padding: '0 10px' }}>
