@@ -168,7 +168,7 @@ export const admin: Record<string, [string, string]> = {
   'ad.r.saved': ['All changes saved', 'সব পরিবর্তন সেভ করা'],
   'ad.r.saveFail': ['Could not save', 'সেভ করা যায়নি'],
   'ad.r.auto': ['Changes save automatically', 'পরিবর্তন নিজে নিজেই সেভ করা হয়'],
-  'ad.r.from': ['From', 'প্রেরক'],
+  'ad.r.from': ['From', 'যিনি পাঠান'],
   'ad.r.givesTo': ['gives tasks to →', 'যাদের কাজ দেন →'],
   'ad.r.noPositions': ['No positions yet', 'এখনো কোনো পদ নেই'],
   'ad.r.noPositionsText': ['Add positions under Organization first.', 'আগে সংগঠন থেকে পদ যোগ করুন।'],
