@@ -37,6 +37,7 @@ export const mobile: Record<string, [string, string]> = {
   'mb.gv.waiting': ['Waiting for your approval', 'আপনার অনুমোদনের অপেক্ষায়'],
   'mb.gv.people': ['{n} people', '{n} জন'],
   'mb.gv.avg': ['Overall {n}%', 'সব মিলিয়ে {n}%'],
+  'mb.markAll': ['Mark all read', 'সব পড়া হলো'],
   'mb.me': ['Me', 'আমি'],
   'mb.hello': ['Hello, {name}', 'স্বাগতম, {name}'],
   'mb.minChars': ['At least 8 characters.', 'কমপক্ষে ৮টি অক্ষর।'],

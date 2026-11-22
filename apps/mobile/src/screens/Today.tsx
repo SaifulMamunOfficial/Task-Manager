@@ -189,7 +189,7 @@ export default function Today() {
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {v.week.map(({ day, count }, i) => (
                   <View key={i} style={[s.day, i === 0 && { backgroundColor: C.brand }]} accessibilityLabel={`${date(day, { weekday: 'long', day: 'numeric' })}: ${count}`}>
-                    <Text style={[s.dayName, i === 0 && { color: '#e0e7ff' }]}>{date(day, { weekday: 'short' })}</Text>
+                    <Text style={[s.dayName, i === 0 && { color: '#e0e7ff' }]} numberOfLines={1}>{date(day, { weekday: 'short' }).slice(0, 3)}</Text>
                     <Text style={[s.dayNum, i === 0 && { color: '#fff' }]}>{n(day.getDate())}</Text>
                     <View style={[s.dayDot, count > 0 ? { backgroundColor: i === 0 ? '#fff' : C.brand } : { backgroundColor: 'transparent' }]}>
                       {count > 0 && <Text style={{ color: i === 0 ? C.brand : '#fff', fontSize: 10.5, fontWeight: '800' }}>{n(count)}</Text>}

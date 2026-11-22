@@ -56,8 +56,8 @@ export default function Notifications() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {unread > 0 && (
         <View style={s.bar}>
-          <Text style={{ flex: 1, color: C.ink, fontWeight: '800' }}>{t('nt.unread', { n: unread })}</Text>
-          <Btn label={t('nt.markAll')} icon="checkmark-done" onPress={markAll} style={{ minHeight: 38, paddingHorizontal: 12 }} />
+          <Text style={{ flex: 1, color: C.ink, fontWeight: '800' }} numberOfLines={1}>{t('nt.unread', { n: unread })}</Text>
+          <Btn label={t('mb.markAll')} icon="checkmark-done" onPress={markAll} style={{ minHeight: 38, paddingHorizontal: 12 }} />
         </View>
       )}
       <ErrorText msg={error} />
