@@ -13,7 +13,9 @@ import { C, Icon, type IconName } from './src/ui';
 import Login from './src/screens/Login';
 import ChangePassword from './src/screens/ChangePassword';
 import Today from './src/screens/Today';
+import * as Linking from 'expo-linking';
 import TaskList from './src/screens/TaskList';
+import GivenList from './src/screens/GivenList';
 import TaskDetail from './src/screens/TaskDetail';
 import NewTask from './src/screens/NewTask';
 import Notifications from './src/screens/Notifications';
@@ -24,7 +26,20 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MineScreen = () => <TaskList who="mine" />;
-const GivenScreen = () => <TaskList who="given" />;
+const GivenScreen = () => <GivenList />;
+
+// Deep links (also handy for testing): <app url>/--/given, /--/task/<id>, /--/new ...
+const linking = {
+  prefixes: [Linking.createURL('/')],
+  config: {
+    screens: {
+      Tabs: { screens: { Today: 'today', Mine: 'mine', Given: 'given', Notifications: 'alerts', Account: 'me' } },
+      TaskDetail: 'task/:id',
+      NewTask: 'new',
+      ChangePassword: 'password',
+    },
+  },
+};
 const ForcedPassword = () => <ChangePassword forced />;
 
 function Tabs() {
@@ -81,6 +96,7 @@ function Root() {
   return (
     <NavigationContainer
       ref={navRef}
+      linking={linking}
       onReady={() => {
         if (pending.current) navRef.navigate('TaskDetail', { id: pending.current });
         pending.current = null;
