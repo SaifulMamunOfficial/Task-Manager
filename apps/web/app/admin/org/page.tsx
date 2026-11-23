@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, post } from '../../../lib/api';
 import { useI18n } from '../../../lib/i18n';
 import { useOrgData, type Pos, type Unit } from '../../../lib/orgdata';
-import { Avatar, Err, PageHead, Skeleton, StatCard } from '../../../components/bits';
+import { Avatar, Err, PageHead, Skeleton } from '../../../components/bits';
 import { Icon } from '../../../components/icons';
 import { Modal } from '../../../components/Modal';
 import { useToast } from '../../../components/toast';
