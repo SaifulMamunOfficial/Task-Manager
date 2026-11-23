@@ -1,6 +1,6 @@
 export type Lang = 'bn' | 'en';
 export type PosRef = { id: string; title: string; titleBn?: string | null; level: number };
-export type Position = { id: string; isPrimary: boolean; unit: { id: string; name: string; nameBn?: string | null }; position: PosRef };
+export type Position = { id: string; isPrimary: boolean; unit: { id: string; name: string; nameBn?: string | null }; secretariat?: { id: string; name: string; nameBn?: string | null } | null; position: PosRef };
 export type Me = { id: string; name: string; nameBn?: string | null; email: string; isAdmin: boolean; mustChangePassword: boolean; language: Lang; positions: Position[] };
 export type Brief = { id: string; name: string; nameBn?: string | null };
 

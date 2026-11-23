@@ -14,7 +14,7 @@ export type AdminUser = {
   isActive: boolean;
   isAdmin: boolean;
   language?: string;
-  positions: { id: string; isPrimary: boolean; reportsToUserId: string | null; secretariatId: string | null; unit: { id: string; name: string; nameBn?: string | null }; position: Pos }[];
+  positions: { id: string; isPrimary: boolean; reportsToUserId: string | null; secretariatId: string | null; unit: { id: string; name: string; nameBn?: string | null }; secretariat?: { id: string; name: string; nameBn?: string | null } | null; position: Pos }[];
 };
 
 /** Everything the admin screens need, loaded together and refreshable. */

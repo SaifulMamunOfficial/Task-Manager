@@ -126,7 +126,7 @@ export default function Users() {
                   {!u.isAdmin && u.positions.length === 0 && <span className="muted">{t('ad.u.noPosition')}</span>}
                   {u.positions.map((p) => (
                     <span key={p.id} className={`tagchip ${p.isPrimary && u.positions.length > 1 ? 'primary' : ''}`} title={p.isPrimary && u.positions.length > 1 ? t('ad.u.primaryTitle') : undefined}>
-                      <b>{posTitle(p.position)}</b> {unitName(p.unit)}
+                      <b>{posTitle(p.position)}</b> {unitName(p.secretariat ?? p.unit)}
                     </span>
                   ))}
                 </div>

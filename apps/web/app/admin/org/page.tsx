@@ -20,7 +20,9 @@ export default function Org() {
   const [showInactive, setShowInactive] = useState(false);
 
   const activeUsers = d.users.filter((u) => u.isActive && !u.isAdmin);
-  const membersOf = (unitId: string) => activeUsers.filter((u) => u.positions.some((p) => p.unit.id === unitId));
+  // People who work directly in a unit. People who work in one of its secretariats (divisions) are counted there instead.
+  const membersOf = (unitId: string) => activeUsers.filter((u) => u.positions.some((p) => p.unit.id === unitId && !p.secretariatId));
+  const divisionMembers = (secId: string) => activeUsers.filter((u) => u.positions.some((p) => p.secretariatId === secId));
   const holders = (positionId: string) => activeUsers.filter((u) => u.positions.some((p) => p.position.id === positionId)).length;
 
   const units = useMemo(
@@ -94,7 +96,7 @@ export default function Org() {
                     </div>
                     <div className="tagrow">
                       {secs.length === 0 && <span className="muted">{t('c.none')}</span>}
-                      {secs.map((s) => <span key={s.id} className="tagchip">{unitName(s)}</span>)}
+                      {secs.map((s) => <span key={s.id} className="tagchip">{unitName(s)} <b>{n(divisionMembers(s.id).length)}</b></span>)}
                     </div>
                     <div>{u.isActive ? <span className="pill green">{t('ad.o.active')}</span> : <span className="pill gray">{t('ad.o.inactive')}</span>}</div>
                     <button className="ghost sm" tabIndex={-1} aria-label={t('ad.o.open', { name: unitName(u) })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
@@ -170,7 +172,10 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
   }, [onClose]);
 
   const secs = d.secretariats.filter((s) => s.unitId === unit.id);
-  const members = d.users.filter((u) => u.isActive && !u.isAdmin && u.positions.some((p) => p.unit.id === unit.id));
+  // Everyone who belongs to this unit or to one of its secretariats (used to pick a secretary); the unit's own members are only those not in a secretariat.
+  const allPeople = d.users.filter((u) => u.isActive && !u.isAdmin && u.positions.some((p) => p.unit.id === unit.id));
+  const members = allPeople.filter((u) => u.positions.some((p) => p.unit.id === unit.id && !p.secretariatId));
+  const peopleOf = (secId: string) => allPeople.filter((u) => u.positions.some((p) => p.secretariatId === secId));
   const parent = d.units.find((u) => u.id === unit.parentId);
   const dirty = name.trim() !== unit.name || nameBn.trim() !== (unit.nameBn ?? '');
   const sub = unit.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : parent ? t('ad.o.under', { name: unitName(parent) }) : t('ad.o.unitBranch');
@@ -225,7 +230,12 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
                 <div key={s.id} className="file" style={{ background: 'var(--surface)' }}>
                   <span className="grow">
                     <b>{unitName(s)}</b>
-                    <div className="muted" style={{ fontSize: 12.5 }}>{t('ad.o.secretaryIs', { name: personName(sec) ?? t('ad.o.notSet') })}</div>
+                    <div className="muted" style={{ fontSize: 12.5 }}>{t('ad.o.secretaryIs', { name: personName(sec) ?? t('ad.o.notSet') })} · {t('ad.o.divMembers', { n: peopleOf(s.id).length })}</div>
+                    {peopleOf(s.id).length === 0 ? (
+                      <div className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>{t('ad.o.noDivMembers')}</div>
+                    ) : (
+                      <div className="tagrow" style={{ marginTop: 6 }}>{peopleOf(s.id).map((m) => <span key={m.id} className="tagchip">{personName(m)}</span>)}</div>
+                    )}
                   </span>
                   <button className="danger sm" onClick={() => setConfirm({ sec: s.id, name: unitName(s) })}>{t('c.delete')}</button>
                 </div>
@@ -247,7 +257,7 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
                 <label htmlFor="ss">{t('ad.o.secretary')}</label>
                 <select id="ss" value={secUser} onChange={(e) => setSecUser(e.target.value)}>
                   <option value="">{t('ad.o.notSetCap')}</option>
-                  {members.map((m) => <option key={m.id} value={m.id}>{personName(m)}</option>)}
+                  {allPeople.map((m) => <option key={m.id} value={m.id}>{personName(m)}</option>)}
                 </select>
               </div>
               <button disabled={busy || !secName.trim()}>{t('c.add')}</button>
@@ -255,14 +265,14 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
           </section>
 
           <section>
-            <div className="sec-title">{t('ad.o.members')} <span>{n(members.length)}</span></div>
+            <div className="sec-title">{t('ad.o.unitMembers')} <span>{n(members.length)}</span></div>
             {members.length === 0 && <p className="muted">{t('ad.o.noMembers')}</p>}
             {members.map((m) => (
               <div key={m.id} className="file" style={{ background: 'var(--surface)' }}>
                 <Avatar name={personName(m)} />
                 <span className="grow">{personName(m)}</span>
                 <span className="tagrow" style={{ justifyContent: 'flex-end' }}>
-                  {m.positions.filter((p) => p.unit.id === unit.id).map((p) => <span key={p.id} className="tagchip">{posTitle(p.position)}</span>)}
+                  {m.positions.filter((p) => p.unit.id === unit.id && !p.secretariatId).map((p) => <span key={p.id} className="tagchip">{posTitle(p.position)}</span>)}
                 </span>
               </div>
             ))}

@@ -123,7 +123,7 @@ export default function Account() {
                 <View style={s.rolePill}>
                   <Icon name="briefcase-outline" size={13} color={C.brand} />
                   <Text style={{ color: C.brand, fontWeight: '700', fontSize: 12.5 }} numberOfLines={1}>
-                    {posTitle(first.position)} · {unitName(first.unit)}
+                    {posTitle(first.position)} · {unitName(first.secretariat ?? first.unit)}
                   </Text>
                 </View>
               )}

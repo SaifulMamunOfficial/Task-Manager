@@ -99,6 +99,7 @@ export class AuthService {
             position: { select: { id: true, title: true, titleBn: true, level: true } },
             reportsToUserId: true,
             secretariatId: true,
+            secretariat: { select: { id: true, name: true, nameBn: true } },
           },
         },
       },
