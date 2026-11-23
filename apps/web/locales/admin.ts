@@ -241,7 +241,7 @@ export const admin: Record<string, [string, string]> = {
   'ad.r.unitHours': ['hours', 'ঘণ্টা'],
   'ad.r.unitHoursBefore': ['hours before', 'ঘণ্টা আগে'],
   'ad.r.unitDays': ['days without update', 'দিন আপডেট ছাড়া'],
-  'ad.r.k.GLOBAL': ['Sending window and time zone', 'পাঠানোর শেষ তারিখ ও টাইম জোন'],
+  'ad.r.k.GLOBAL': ['Sending window and time zone', 'পাঠানোর সময় ও টাইম জোন'],
   'ad.r.k.GLOBAL.t': ['Reminders are only sent between these hours, in this time zone.', 'এই টাইম জোনে শুধু এই ঘণ্টাগুলোর মধ্যে রিমাইন্ডার পাঠানো হয়।'],
   'ad.r.k.ACCEPT_PENDING': ['Task not accepted yet', 'কাজ এখনো গ্রহণ করা হয়নি'],
   'ad.r.k.ACCEPT_PENDING.t': ['Remind the assignee daily, and tell the giver if it takes too long.', 'যাকে দেওয়া হয়েছে তাকে প্রতিদিন মনে করানো হয়, বেশি দেরি হলে দাতাকে জানানো হয়।'],

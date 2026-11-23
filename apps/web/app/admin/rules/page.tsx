@@ -344,12 +344,12 @@ function Reminders() {
     <>
       <Intro title={t('ad.r.remTitle')}>{t('ad.r.remText')}</Intro>
       {GROUPS.map((g) => (
-        <div key={g.title} style={{ marginBottom: 22 }}>
-          <h2>{t(g.title)}</h2>
-          <div className="list" style={{ maxWidth: 980, marginBottom: 0 }}>
+        <section key={g.title} className="rem-group">
+          <h2 className="rem-title">{t(g.title)}</h2>
+          <div className="panel rem-card">
             {g.kinds.map((k) => rules[k] && <RuleRow key={k} kind={k} rule={rules[k]} onSave={save} />)}
           </div>
-        </div>
+        </section>
       ))}
     </>
   );
@@ -366,57 +366,58 @@ function RuleRow({ kind, rule, onSave }: { kind: string; rule: Rule; onSave: (k:
   const setNum = (key: string, v: number) => setCfg({ ...cfg, [key]: v });
 
   return (
-    <div className={`rrow ${off ? 'off' : ''}`}>
-      <div className="rhead">
-        <div className="grow">
-          <div style={{ fontWeight: 650 }}>{title}</div>
-          <div className="muted">{t(`ad.r.k.${kind}.t`)}</div>
-        </div>
-        {kind !== 'GLOBAL' && (
-          <button
-            role="switch"
-            aria-checked={rule.enabled}
-            aria-label={t('ad.r.enabled', { title })}
-            className={`switch ${rule.enabled ? 'on' : ''}`}
-            onClick={() => onSave(kind, !rule.enabled, rule.config, t(rule.enabled ? 'ad.r.turnedOff' : 'ad.r.turnedOn', { title }))}
-          />
+    <div className={`rrow rr2 ${off ? 'off' : ''}`}>
+      <div className="rinfo">
+        <div className="rtitle">{title}</div>
+        <div className="muted">{t(`ad.r.k.${kind}.t`)}</div>
+      </div>
+      <div className="rfields2">
+        {fields.map((f) => (
+          <div key={f.key} className="rfield">
+            <label htmlFor={`${kind}-${f.key}`}>{t(f.label)}</label>
+            <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
+              {f.kind === 'number' && <input id={`${kind}-${f.key}`} type="number" min={0} value={cfg[f.key] ?? 0} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 84 }} />}
+              {f.kind === 'hour' && (
+                <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 8} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 130 }}>
+                  {HOURS.map((h) => <option key={h} value={h}>{time(new Date(2000, 0, 1, h))}</option>)}
+                </select>
+              )}
+              {f.kind === 'weekday' && (
+                <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 4} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 140 }}>
+                  {[0, 1, 2, 3, 4, 5, 6].map((i) => <option key={i} value={i}>{t(`ad.r.d${i}`)}</option>)}
+                </select>
+              )}
+              {f.kind === 'zone' && (
+                <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 360} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 210 }}>
+                  {ZONES.includes(cfg[f.key]) ? null : <option value={cfg[f.key]}>UTC {n(cfg[f.key])}</option>}
+                  {ZONES.map((z) => <option key={z} value={z}>{t(`ad.r.z${z}`)}</option>)}
+                </select>
+              )}
+              {f.unit && <span className="muted">{t(f.unit)}</span>}
+            </div>
+          </div>
+        ))}
+        {dirty && (
+          <div className="rsave">
+            <button className="sm" onClick={() => setCfg(rule.config)}>{t('ad.r.reset')}</button>
+            <button className="primary sm" onClick={() => onSave(kind, rule.enabled, cfg, t('ad.r.ruleSaved', { title }))}>{t('ad.r.save')}</button>
+          </div>
         )}
       </div>
-      {fields.length > 0 && (
-        <div className="rfields">
-          {fields.map((f) => (
-            <div key={f.key} className="rfield">
-              <label htmlFor={`${kind}-${f.key}`}>{t(f.label)}</label>
-              <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
-                {f.kind === 'number' && <input id={`${kind}-${f.key}`} type="number" min={0} value={cfg[f.key] ?? 0} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 84 }} />}
-                {f.kind === 'hour' && (
-                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 8} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 130 }}>
-                    {HOURS.map((h) => <option key={h} value={h}>{time(new Date(2000, 0, 1, h))}</option>)}
-                  </select>
-                )}
-                {f.kind === 'weekday' && (
-                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 4} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 140 }}>
-                    {[0, 1, 2, 3, 4, 5, 6].map((i) => <option key={i} value={i}>{t(`ad.r.d${i}`)}</option>)}
-                  </select>
-                )}
-                {f.kind === 'zone' && (
-                  <select id={`${kind}-${f.key}`} value={cfg[f.key] ?? 360} onChange={(e) => setNum(f.key, Number(e.target.value))} style={{ width: 210 }}>
-                    {ZONES.includes(cfg[f.key]) ? null : <option value={cfg[f.key]}>UTC {n(cfg[f.key])}</option>}
-                    {ZONES.map((z) => <option key={z} value={z}>{t(`ad.r.z${z}`)}</option>)}
-                  </select>
-                )}
-                {f.unit && <span className="muted">{t(f.unit)}</span>}
-              </div>
-            </div>
-          ))}
-          {dirty && (
-            <div className="row" style={{ gap: 8, alignSelf: 'flex-end' }}>
-              <button className="sm" onClick={() => setCfg(rule.config)}>{t('ad.r.reset')}</button>
-              <button className="primary sm" onClick={() => onSave(kind, rule.enabled, cfg, t('ad.r.ruleSaved', { title }))}>{t('ad.r.save')}</button>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="rswitch">
+        {kind !== 'GLOBAL' && (
+          <>
+            <span className="rstate">{t(rule.enabled ? 'an.on' : 'an.off')}</span>
+            <button
+              role="switch"
+              aria-checked={rule.enabled}
+              aria-label={t('ad.r.enabled', { title })}
+              className={`switch ${rule.enabled ? 'on' : ''}`}
+              onClick={() => onSave(kind, !rule.enabled, rule.config, t(rule.enabled ? 'ad.r.turnedOff' : 'ad.r.turnedOn', { title }))}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }
