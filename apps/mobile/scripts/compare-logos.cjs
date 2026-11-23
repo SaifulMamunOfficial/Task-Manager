@@ -7,10 +7,11 @@ const assets = path.join(__dirname, '..', 'assets');
 const designs = [
   ['A', path.join(assets, 'logo.svg')],
   ['B', path.join(assets, 'alt', 'logo-b.svg')],
+  ['C', path.join(assets, 'alt', 'logo-c.svg')],
 ];
 
 (async () => {
-  const size = 420;
+  const size = 340;
   const gap = 60;
   const pad = 60;
   const width = pad * 2 + size * designs.length + gap * (designs.length - 1);
