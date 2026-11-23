@@ -34,6 +34,13 @@ export default function Org() {
       <PageHead title={t('nav.organization')} subtitle={t('ad.o.sub')} />
       <Err msg={d.error ? err(d.error) : ''} />
 
+      <div className="stats">
+        <StatCard label={t('ad.ov.units')} value={n(d.units.filter((u) => u.isActive).length)} icon="building" tone="purple" />
+        <StatCard label={t('ad.o.statSecretariats')} value={n(d.secretariats.length)} icon="inbox" tone="blue" />
+        <StatCard label={t('ad.o.statPositions')} value={n(d.positions.length)} icon="tasks" tone="amber" />
+        <StatCard label={t('ad.ov.people')} value={n(activeUsers.length)} icon="users" tone="green" href="/admin/users" />
+      </div>
+
       <div className="org-stack">
         <div className="panel org-card">
           <div className="panel-h">
