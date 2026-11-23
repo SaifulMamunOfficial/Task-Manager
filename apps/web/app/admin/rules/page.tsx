@@ -49,9 +49,12 @@ export default function Rules() {
 
 function Intro({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <h2 style={{ fontSize: 17, marginBottom: 4 }}>{title}</h2>
-      <p className="muted" style={{ fontSize: 14, maxWidth: 760 }}>{children}</p>
+    <div className="tab-intro">
+      <Icon name="info" size={17} />
+      <div>
+        <h2 className="sr-only">{title}</h2>
+        <p>{children}</p>
+      </div>
     </div>
   );
 }
