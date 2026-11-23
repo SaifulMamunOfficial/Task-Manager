@@ -65,6 +65,18 @@ function Delegation({ d }: { d: OrgData }) {
   const [rules, setRules] = useState<{ fromPositionId: string; toPositionId: string }[] | null>(null);
   const [hover, setHover] = useState<{ r: string; c: string } | null>(null);
   const [state, setState] = useState<SaveState>('idle');
+  const [view, setViewState] = useState<'cards' | 'matrix'>('cards');
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('tm:permView') === 'matrix') setViewState('matrix');
+    } catch {}
+  }, []);
+  const setView = (v: 'cards' | 'matrix') => {
+    setViewState(v);
+    try {
+      localStorage.setItem('tm:permView', v);
+    } catch {}
+  };
   const positions = useMemo(() => [...d.positions].sort((a, b) => a.level - b.level || a.title.localeCompare(b.title)), [d.positions]);
 
   useEffect(() => {
@@ -90,6 +102,30 @@ function Delegation({ d }: { d: OrgData }) {
     }
   }
 
+  // Ready-made setups: one click sets every position (asks first, because it replaces what is there now).
+  const levels = [...new Set(positions.map((p) => p.level))].sort((a, b) => a - b);
+  const targets = (from: Pos, kind: string): string[] => {
+    if (kind === 'none') return [];
+    if (kind === 'all') return positions.map((p) => p.id);
+    if (kind === 'below') return positions.filter((p) => p.level > from.level).map((p) => p.id);
+    const next = levels.find((l) => l > from.level);
+    return next === undefined ? [] : positions.filter((p) => p.level === next).map((p) => p.id);
+  };
+  async function applyPreset(kind: string) {
+    if (!kind || !confirm(t('ad.r.pConfirm'))) return;
+    const before = rules;
+    setState('saving');
+    try {
+      await Promise.all(positions.map((p) => api('/settings/delegation', { method: 'PUT', body: JSON.stringify({ fromPositionId: p.id, toPositionIds: targets(p, kind) }) })));
+      setRules(positions.flatMap((p) => targets(p, kind).map((x) => ({ fromPositionId: p.id, toPositionId: x }))));
+      setState('saved');
+    } catch (e: any) {
+      setRules(before);
+      setState('error');
+      toast.error(err(e.message));
+    }
+  }
+
   const toggle = (from: Pos, to: Pos) => {
     const cur = positions.filter((p) => allowed(from.id, p.id)).map((p) => p.id);
     setRow(from, cur.includes(to.id) ? cur.filter((x) => x !== to.id) : [...cur, to.id]);
@@ -106,8 +142,58 @@ function Delegation({ d }: { d: OrgData }) {
         </span>
       </div>
 
+      {positions.length > 0 && (
+        <div className="toolbar" style={{ marginTop: 4 }}>
+          <div className="seg" role="radiogroup" aria-label={t('bd.view')}>
+            <button role="radio" aria-checked={view === 'cards'} className={view === 'cards' ? 'on' : ''} onClick={() => setView('cards')}>{t('ad.r.viewCards')}</button>
+            <button role="radio" aria-checked={view === 'matrix'} className={view === 'matrix' ? 'on' : ''} onClick={() => setView('matrix')}>{t('ad.r.viewMatrix')}</button>
+          </div>
+          <select value="" onChange={(e) => applyPreset(e.target.value)} style={{ width: 'auto', marginLeft: 'auto' }} aria-label={t('ad.r.preset')}>
+            <option value="">{t('ad.r.preset')}</option>
+            <option value="next">{t('ad.r.pNext')}</option>
+            <option value="below">{t('ad.r.pBelow')}</option>
+            <option value="all">{t('ad.r.pAll')}</option>
+            <option value="none">{t('ad.r.pNone')}</option>
+          </select>
+        </div>
+      )}
+
       {positions.length === 0 ? (
         <div className="list"><div className="empty"><b>{t('ad.r.noPositions')}</b>{t('ad.r.noPositionsText')}</div></div>
+      ) : view === 'cards' ? (
+        <div className="perm-list">
+          {positions.map((r) => {
+            const on = positions.filter((c) => allowed(r.id, c.id));
+            return (
+              <section key={r.id} className="perm-card" aria-label={posTitle(r)}>
+                <div className="perm-head">
+                  <span className="lvl">{n(r.level)}</span>
+                  <div>
+                    <b>{posTitle(r)}</b>
+                    <small className="muted"> · {people(holders(r.id))}</small>
+                  </div>
+                  <span className="perm-count">{t('ad.r.summary', { a: on.length, b: positions.length })}</span>
+                  <span className="perm-acts">
+                    <button className="ghost sm" onClick={() => setRow(r, positions.map((p) => p.id))}>{t('ad.r.selectAll')}</button>
+                    <button className="ghost sm" onClick={() => setRow(r, [])}>{t('ad.r.selectNone')}</button>
+                  </span>
+                </div>
+                <div className="perm-label">{t('ad.r.canGive')}</div>
+                <div className="pchips">
+                  {positions.map((c) => {
+                    const checked = allowed(r.id, c.id);
+                    return (
+                      <button key={c.id} type="button" role="switch" aria-checked={checked} className={`pchip ${checked ? 'on' : ''}`} onClick={() => toggle(r, c)} title={t('ad.r.cellAria', { from: posTitle(r), to: posTitle(c) })}>
+                        {checked && <Icon name="check" size={14} />} {posTitle(c)} <small>{n(holders(c.id))}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+                {on.length === 0 && <div className="perm-warn">{t('ad.r.cannotGive')}</div>}
+              </section>
+            );
+          })}
+        </div>
       ) : (
         <div className="mx-wrap">
           <table className="mx" onMouseLeave={() => setHover(null)}>

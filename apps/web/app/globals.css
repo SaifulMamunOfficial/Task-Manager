@@ -574,3 +574,18 @@ html[lang='bn'] body { line-height: 1.6; }
 .org-stack .org-card { flex: none; }
 .orow.prow2 { grid-template-columns: 56px minmax(160px, 1.3fr) minmax(140px, 1.2fr) 130px 28px; }
 .orow.prow2 .nm { font-weight: 650; }
+
+/* ---------- task permissions: simple card view ---------- */
+.perm-list { display: grid; gap: 12px; margin-top: 8px; }
+.perm-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; }
+.perm-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.perm-count { margin-left: auto; color: var(--muted); font-size: 13px; font-weight: 600; }
+.perm-acts { display: inline-flex; gap: 2px; }
+.perm-label { margin: 12px 0 8px; font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.pchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pchip { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 99px; border: 1.5px solid var(--border-strong); background: var(--surface); color: var(--text-2); font-weight: 600; transition: background .12s, border-color .12s, color .12s; }
+.pchip small { color: var(--muted); font-weight: 600; }
+.pchip:hover { background: var(--surface-2); }
+.pchip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+.pchip.on small { color: var(--accent-text); opacity: .8; }
+.perm-warn { margin-top: 10px; color: var(--amber); background: var(--amber-bg); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 600; }
