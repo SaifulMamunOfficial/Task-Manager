@@ -5,6 +5,7 @@ import { useI18n } from '../../../lib/i18n';
 import { useOrgData, type Pos } from '../../../lib/orgdata';
 import { Err, PageHead } from '../../../components/bits';
 import { Icon } from '../../../components/icons';
+import { PositionModal } from '../../../components/PositionModal';
 import { useToast } from '../../../components/toast';
 
 type OrgData = ReturnType<typeof useOrgData>;
@@ -55,7 +56,7 @@ function Intro({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-// ---------- 1. task permissions: a standard permission matrix ----------
+// ---------- 1. task permissions: one clear table; each row is changed in the position editor ----------
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -63,48 +64,23 @@ function Delegation({ d }: { d: OrgData }) {
   const toast = useToast();
   const { t, n, posTitle, err } = useI18n();
   const [rules, setRules] = useState<{ fromPositionId: string; toPositionId: string }[] | null>(null);
-  const [hover, setHover] = useState<{ r: string; c: string } | null>(null);
   const [state, setState] = useState<SaveState>('idle');
-  const [view, setViewState] = useState<'cards' | 'matrix'>('cards');
-  useEffect(() => {
-    try {
-      if (localStorage.getItem('tm:permView') === 'matrix') setViewState('matrix');
-    } catch {}
-  }, []);
-  const setView = (v: 'cards' | 'matrix') => {
-    setViewState(v);
-    try {
-      localStorage.setItem('tm:permView', v);
-    } catch {}
-  };
+  const [edit, setEdit] = useState<Pos | null>(null);
   const positions = useMemo(() => [...d.positions].sort((a, b) => a.level - b.level || a.title.localeCompare(b.title)), [d.positions]);
 
+  const load = () => api('/settings/delegation').then(setRules).catch((e) => toast.error(err(e.message)));
   useEffect(() => {
-    api('/settings/delegation').then(setRules).catch((e) => toast.error(err(e.message)));
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const allowed = (from: string, to: string) => (rules ?? []).some((r) => r.fromPositionId === from && r.toPositionId === to);
   const holders = (pid: string) => d.users.filter((u) => u.isActive && !u.isAdmin && u.positions.some((p) => p.position.id === pid)).length;
   const people = (c: number) => t(c === 1 ? 'c.person' : 'c.people', { n: c });
-
-  async function setRow(from: Pos, next: string[]) {
-    const before = rules ?? [];
-    setRules([...before.filter((r) => r.fromPositionId !== from.id), ...next.map((x) => ({ fromPositionId: from.id, toPositionId: x }))]);
-    setState('saving');
-    try {
-      await api('/settings/delegation', { method: 'PUT', body: JSON.stringify({ fromPositionId: from.id, toPositionIds: next }) });
-      setState('saved');
-    } catch (e: any) {
-      setRules(before);
-      setState('error');
-      toast.error(err(e.message));
-    }
-  }
+  const targetsOf = (from: string) => positions.filter((p) => (rules ?? []).some((r) => r.fromPositionId === from && r.toPositionId === p.id));
 
   // Ready-made setups: one click sets every position (asks first, because it replaces what is there now).
   const levels = [...new Set(positions.map((p) => p.level))].sort((a, b) => a - b);
-  const targets = (from: Pos, kind: string): string[] => {
+  const presetTargets = (from: Pos, kind: string): string[] => {
     if (kind === 'none') return [];
     if (kind === 'all') return positions.map((p) => p.id);
     if (kind === 'below') return positions.filter((p) => p.level > from.level).map((p) => p.id);
@@ -116,8 +92,8 @@ function Delegation({ d }: { d: OrgData }) {
     const before = rules;
     setState('saving');
     try {
-      await Promise.all(positions.map((p) => api('/settings/delegation', { method: 'PUT', body: JSON.stringify({ fromPositionId: p.id, toPositionIds: targets(p, kind) }) })));
-      setRules(positions.flatMap((p) => targets(p, kind).map((x) => ({ fromPositionId: p.id, toPositionId: x }))));
+      await Promise.all(positions.map((p) => api('/settings/delegation', { method: 'PUT', body: JSON.stringify({ fromPositionId: p.id, toPositionIds: presetTargets(p, kind) }) })));
+      setRules(positions.flatMap((p) => presetTargets(p, kind).map((x) => ({ fromPositionId: p.id, toPositionId: x }))));
       setState('saved');
     } catch (e: any) {
       setRules(before);
@@ -126,116 +102,66 @@ function Delegation({ d }: { d: OrgData }) {
     }
   }
 
-  const toggle = (from: Pos, to: Pos) => {
-    const cur = positions.filter((p) => allowed(from.id, p.id)).map((p) => p.id);
-    setRow(from, cur.includes(to.id) ? cur.filter((x) => x !== to.id) : [...cur, to.id]);
-  };
-
   if (!rules) return <div className="list"><div className="skel" /><div className="skel" /><div className="skel" /></div>;
 
   return (
     <>
       <div className="row between" style={{ alignItems: 'flex-end' }}>
-        <Intro title={t('ad.r.delegTitle')}>{t('ad.r.delegText')}</Intro>
+        <Intro title={t('ad.r.delegTitle')}>{t('ad.r.delegText2')}</Intro>
         <span className={`savestate ${state}`} role="status" aria-live="polite">
-          {state === 'saving' ? t('c.saving') : state === 'saved' ? <><Icon name="check" size={14} /> {t('ad.r.saved')}</> : state === 'error' ? t('ad.r.saveFail') : t('ad.r.auto')}
+          {state === 'saving' ? t('c.saving') : state === 'saved' ? <><Icon name="check" size={14} /> {t('ad.r.saved')}</> : state === 'error' ? t('ad.r.saveFail') : ''}
         </span>
       </div>
 
-      {positions.length > 0 && (
-        <div className="toolbar" style={{ marginTop: 4 }}>
-          <div className="seg" role="radiogroup" aria-label={t('bd.view')}>
-            <button role="radio" aria-checked={view === 'cards'} className={view === 'cards' ? 'on' : ''} onClick={() => setView('cards')}>{t('ad.r.viewCards')}</button>
-            <button role="radio" aria-checked={view === 'matrix'} className={view === 'matrix' ? 'on' : ''} onClick={() => setView('matrix')}>{t('ad.r.viewMatrix')}</button>
-          </div>
-          <select value="" onChange={(e) => applyPreset(e.target.value)} style={{ width: 'auto', marginLeft: 'auto' }} aria-label={t('ad.r.preset')}>
-            <option value="">{t('ad.r.preset')}</option>
-            <option value="next">{t('ad.r.pNext')}</option>
-            <option value="below">{t('ad.r.pBelow')}</option>
-            <option value="all">{t('ad.r.pAll')}</option>
-            <option value="none">{t('ad.r.pNone')}</option>
-          </select>
-        </div>
-      )}
-
       {positions.length === 0 ? (
         <div className="list"><div className="empty"><b>{t('ad.r.noPositions')}</b>{t('ad.r.noPositionsText')}</div></div>
-      ) : view === 'cards' ? (
-        <div className="perm-list">
-          {positions.map((r) => {
-            const on = positions.filter((c) => allowed(r.id, c.id));
-            return (
-              <section key={r.id} className="perm-card" aria-label={posTitle(r)}>
-                <div className="perm-head">
-                  <span className="lvl">{n(r.level)}</span>
-                  <div>
-                    <b>{posTitle(r)}</b>
-                    <small className="muted"> · {people(holders(r.id))}</small>
-                  </div>
-                  <span className="perm-count">{t('ad.r.summary', { a: on.length, b: positions.length })}</span>
-                  <span className="perm-acts">
-                    <button className="ghost sm" onClick={() => setRow(r, positions.map((p) => p.id))}>{t('ad.r.selectAll')}</button>
-                    <button className="ghost sm" onClick={() => setRow(r, [])}>{t('ad.r.selectNone')}</button>
-                  </span>
-                </div>
-                <div className="perm-label">{t('ad.r.canGive')}</div>
-                <div className="pchips">
-                  {positions.map((c) => {
-                    const checked = allowed(r.id, c.id);
-                    return (
-                      <button key={c.id} type="button" role="switch" aria-checked={checked} className={`pchip ${checked ? 'on' : ''}`} onClick={() => toggle(r, c)} title={t('ad.r.cellAria', { from: posTitle(r), to: posTitle(c) })}>
-                        {checked && <Icon name="check" size={14} />} {posTitle(c)} <small>{n(holders(c.id))}</small>
-                      </button>
-                    );
-                  })}
-                </div>
-                {on.length === 0 && <div className="perm-warn">{t('ad.r.cannotGive')}</div>}
-              </section>
-            );
-          })}
-        </div>
       ) : (
-        <div className="mx-wrap">
-          <table className="mx" onMouseLeave={() => setHover(null)}>
-            <thead>
-              <tr>
-                <th className="rowh corner"><span>{t('ad.r.from')}</span><span className="arrow">{t('ad.r.givesTo')}</span></th>
-                {positions.map((c) => (
-                  <th key={c.id} className={hover?.c === c.id ? 'hl' : ''}>
-                    {posTitle(c)}
-                    <small>{people(holders(c.id))}</small>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {positions.map((r) => (
-                <tr key={r.id} className={hover?.r === r.id ? 'hl' : ''}>
-                  <th scope="row" className="rowh">
-                    <span className="lvl">{n(r.level)}</span>
-                    <span>
-                      {posTitle(r)}
-                      <small>{people(holders(r.id))}</small>
-                    </span>
-                  </th>
-                  {positions.map((c) => (
-                    <td key={c.id} className={hover?.c === c.id ? 'hl' : ''} onMouseEnter={() => setHover({ r: r.id, c: c.id })}>
-                      <input
-                        type="checkbox"
-                        className="cb"
-                        checked={allowed(r.id, c.id)}
-                        onChange={() => toggle(r, c)}
-                        aria-label={t('ad.r.cellAria', { from: posTitle(r), to: posTitle(c) })}
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <div className="toolbar">
+            <span className="muted">{t('ad.r.rowHint')}</span>
+            <select value="" onChange={(e) => applyPreset(e.target.value)} style={{ width: 'auto', marginLeft: 'auto' }} aria-label={t('ad.r.preset')}>
+              <option value="">{t('ad.r.preset')}</option>
+              <option value="next">{t('ad.r.pNext')}</option>
+              <option value="below">{t('ad.r.pBelow')}</option>
+              <option value="all">{t('ad.r.pAll')}</option>
+              <option value="none">{t('ad.r.pNone')}</option>
+            </select>
+          </div>
+          <div className="list">
+            <div className="orow perm2 head" aria-hidden="true"><span>{t('ad.o.colLevel')}</span><span>{t('ad.o.colPosition')}</span><span>{t('ad.r.canGive')}</span><span>{t('ad.o.colPeople')}</span><span /></div>
+            {positions.map((p) => {
+              const to = targetsOf(p.id);
+              return (
+                <div
+                  key={p.id}
+                  className="orow perm2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setEdit(p)}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setEdit(p))}
+                >
+                  <span className="lvl">{n(p.level)}</span>
+                  <div className="nm">{posTitle(p)}</div>
+                  <div className="tagrow">
+                    {to.length === 0 ? (
+                      <span className="pill amber">{t('ad.r.cannotGiveShort')}</span>
+                    ) : (
+                      <>
+                        {to.slice(0, 3).map((x) => <span key={x.id} className="tagchip">{posTitle(x)}</span>)}
+                        {to.length > 3 && <span className="muted">+{n(to.length - 3)}</span>}
+                      </>
+                    )}
+                  </div>
+                  <div className="muted">{people(holders(p.id))}</div>
+                  <button className="ghost sm" tabIndex={-1} aria-label={t('ad.u.edit', { name: posTitle(p) })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="muted" style={{ marginTop: 10 }}>{t('ad.r.delegNote2')}</p>
+        </>
       )}
-      <p className="muted" style={{ marginTop: 10 }}>{t('ad.r.delegNote')}</p>
+      {edit && <PositionModal position={edit} d={d} onClose={() => { setEdit(null); load(); }} />}
     </>
   );
 }

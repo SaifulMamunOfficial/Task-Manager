@@ -7,6 +7,7 @@ import { useOrgData, type Pos, type Unit } from '../../../lib/orgdata';
 import { Avatar, Err, PageHead, Skeleton, StatCard } from '../../../components/bits';
 import { Icon } from '../../../components/icons';
 import { Modal } from '../../../components/Modal';
+import { PositionModal } from '../../../components/PositionModal';
 import { useToast } from '../../../components/toast';
 
 type OrgData = ReturnType<typeof useOrgData>;
@@ -359,51 +360,3 @@ function NewUnitModal({ d, onClose, onCreated }: { d: OrgData; onClose: () => vo
   );
 }
 
-function PositionModal({ position, d, onClose }: { position?: Pos; d: OrgData; onClose: () => void }) {
-  const toast = useToast();
-  const { t, posTitle, err } = useI18n();
-  const [title, setTitle] = useState(position?.title ?? '');
-  const [titleBn, setTitleBn] = useState(position?.titleBn ?? '');
-  const [level, setLevel] = useState(String(position?.level ?? 10));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function go(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError('');
-    try {
-      const body = JSON.stringify({ title: title.trim(), titleBn: titleBn.trim(), level: Number(level) || 10 });
-      if (position) await api(`/positions/${position.id}`, { method: 'PATCH', body });
-      else await api('/positions', { method: 'POST', body });
-      toast.ok(position ? t('ad.o.posUpdated') : t('ad.o.posAdded'));
-      await d.reload();
-      onClose();
-    } catch (e2: any) {
-      setError(err(e2.message));
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Modal title={position ? t('ad.o.posEdit', { title: posTitle(position) }) : t('ad.o.posNew')} onClose={onClose}>
-      <form className="stack" onSubmit={go}>
-        <div className="two">
-          <div><label htmlFor="pt">{t('ad.o.posTitleEn')}</label><input id="pt" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('ad.o.posPhEn')} required /></div>
-          <div><label htmlFor="ptb">{t('ad.o.posTitleBn')}</label><input id="ptb" value={titleBn} onChange={(e) => setTitleBn(e.target.value)} placeholder={t('ad.o.posPhBn')} /></div>
-        </div>
-        <p className="muted" style={{ marginTop: -4 }}>{t('ad.o.posTitleHint')}</p>
-        <div>
-          <label htmlFor="pl">{t('ad.o.level')}</label>
-          <input id="pl" type="number" min={1} value={level} onChange={(e) => setLevel(e.target.value)} />
-          <p className="muted" style={{ marginTop: 4 }}>{t('ad.o.levelHint')}</p>
-        </div>
-        <Err msg={error} />
-        <div className="row" style={{ justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose}>{t('c.cancel')}</button>
-          <button className="primary" disabled={busy || !title.trim()}>{busy ? t('c.saving') : position ? t('c.save') : t('ad.o.addPosition')}</button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
