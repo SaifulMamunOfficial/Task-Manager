@@ -303,7 +303,7 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
                   <button onClick={() => setModal('reset')}><Icon name="key" /> {t('ad.u.resetBtn')}</button>
                 </div>
                 {user!.id !== me?.id && (
-                  <div className="row between" style={{ borderTop: '1px solid #fecaca', paddingTop: 12 }}>
+                  <div className="row between" style={{ borderTop: '1px solid var(--red-bg)', paddingTop: 12 }}>
                     <div>
                       <b>{user!.isActive ? t('ad.u.deactTitle') : t('ad.u.reactTitle')}</b>
                       <div className="muted">{user!.isActive ? t('ad.u.deactText') : t('ad.u.reactText')}</div>

@@ -649,3 +649,8 @@ html[lang='bn'] body { line-height: 1.6; }
   .adetail { padding-left: 18px; }
   .adl { flex-direction: column; gap: 2px; }
 }
+
+/* the "needs attention" box on the admin overview: follows the light and dark theme */
+.attention-card { background: var(--amber-bg); border-color: rgba(217, 119, 6, .35); color: var(--text); }
+.attention-card h2 { color: var(--amber); }
+.attention-card a { color: var(--accent-text); font-weight: 600; }

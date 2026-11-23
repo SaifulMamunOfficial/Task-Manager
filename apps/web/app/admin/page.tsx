@@ -23,7 +23,7 @@ export default function Admin() {
       </div>
 
       {(noPosition.length > 0 || noBoss.length > 0) && (
-        <div className="card" style={{ background: '#fef0c7', borderColor: '#fedf89' }}>
+        <div className="card attention-card">
           <h2>{t('ad.ov.attention')}</h2>
           {noPosition.map((u) => <div key={u.id}>{t('ad.ov.noPosLine', { name: personName(u) })} <Link href="/admin/users">{t('ad.ov.fix')}</Link></div>)}
           {noBoss.slice(0, 8).map(({ u, p }) => <div key={u.id + p.id}>{t('ad.ov.noMgrLine', { name: personName(u), pos: posTitle(p.position), unit: unitName(p.unit) })} <Link href="/admin/users">{t('ad.ov.fix')}</Link></div>)}
