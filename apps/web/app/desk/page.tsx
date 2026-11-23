@@ -15,7 +15,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 
 export default function Dashboard() {
   const { me, canGive } = useAuth();
-  const { t, n, date, weekday, statusLabel, notifText, timeAgo, err } = useI18n();
+  const { t, n, date, weekday, statusLabel, notifText, timeAgo, err, personName } = useI18n();
   const [mine, setMine] = useState<any[] | null>(null);
   const [given, setGiven] = useState<any[] | null>(null);
   const [notes, setNotes] = useState<any[]>([]);
@@ -56,7 +56,7 @@ export default function Dashboard() {
 
   const loading = mine === null || given === null;
   const nothing = !loading && d.respond.length + d.approve.length + d.overdue.length + d.today.length + d.soon.length === 0;
-  const first = me?.name.split(' ')[0] ?? '';
+  const first = (me ? personName(me) : '').split(' ')[0];
   const h = new Date().getHours();
   const greeting = t(h < 12 ? 'dk.morning' : h < 17 ? 'dk.afternoon' : 'dk.evening', { name: first });
 

@@ -49,6 +49,12 @@ function build(lang: Lang) {
   const statusLabel = (s: string) => t(`status.${s}`);
   const posTitle = (p: TitleLike) => (lang === 'bn' && p.titleBn ? p.titleBn : p.title);
   const unitName = (u: { name: string; nameBn?: string | null }) => (lang === 'bn' && u.nameBn ? u.nameBn : u.name);
+    /** A person's name in the reader's language (falls back to the English name). */
+    function personName(p: { name: string; nameBn?: string | null }): string;
+    function personName(p?: { name: string; nameBn?: string | null } | null): string | undefined;
+    function personName(p?: { name: string; nameBn?: string | null } | null) {
+      return p ? (lang === 'bn' && p.nameBn ? p.nameBn : p.name) : undefined;
+    }
 
   const dueInfo = (due?: string | null, status?: string): { text: string; tone: 'late' | 'soon' | 'ok' | 'none' } => {
     if (!due) return { text: t('due.none'), tone: 'none' };
@@ -111,7 +117,7 @@ function build(lang: Lang) {
   };
 
   const err = (m: string) => translateError(m, lang);
-  return { lang, locale, n, t, has, date, dateTime, time, statusLabel, posTitle, unitName, dueInfo, timeAgo, fmtSize, notifText, err };
+  return { lang, locale, n, t, has, date, dateTime, time, statusLabel, posTitle, unitName, personName, dueInfo, timeAgo, fmtSize, notifText, err };
 }
 
 type Ctx = ReturnType<typeof build> & { setLang: (l: Lang) => Promise<void> };

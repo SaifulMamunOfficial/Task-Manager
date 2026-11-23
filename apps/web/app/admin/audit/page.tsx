@@ -31,7 +31,7 @@ function show(k: string, v: unknown): string {
 const tone = (action: string) => (/DELETE|REMOVE|CLEAR|DEACTIV/i.test(action) ? 'red' : /CREATE|ADD|GENERATE|ACTIVATE/i.test(action) ? 'green' : 'blue');
 
 export default function Audit() {
-  const { t, has, dateTime, date, time, err } = useI18n();
+  const { t, has, dateTime, date, time, err, personName } = useI18n();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [limit, setLimit] = useState(200);
   const [error, setError] = useState('');
@@ -49,7 +49,7 @@ export default function Audit() {
 
   const people = useMemo(() => {
     const m = new Map<string, string>();
-    (rows ?? []).forEach((r) => m.set(r.actor?.id ?? '', r.actor?.name ?? t('ad.a.system')));
+    (rows ?? []).forEach((r) => m.set(r.actor?.id ?? '', personName(r.actor) ?? t('ad.a.system')));
     return [...m.entries()];
   }, [rows, t]);
   const things = useMemo(() => [...new Set((rows ?? []).map((r) => r.entity))], [rows]);
@@ -60,7 +60,7 @@ export default function Audit() {
       if (who !== '' && (r.actor?.id ?? '') !== who) return false;
       if (what && r.entity !== what) return false;
       if (!needle) return true;
-      return `${r.actor?.name ?? ''} ${label('ad.a.act.', r.action)} ${label('ad.a.ent.', r.entity)}`.toLowerCase().includes(needle);
+      return `${personName(r.actor) ?? ''} ${label('ad.a.act.', r.action)} ${label('ad.a.ent.', r.entity)}`.toLowerCase().includes(needle);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, q, who, what]);
@@ -136,8 +136,8 @@ export default function Audit() {
                         >
                           <span className="muted" title={dateTime(r.createdAt)}>{time(r.createdAt)}</span>
                           <div className="awho">
-                            <Avatar name={r.actor?.name ?? t('ad.a.system')} />
-                            <span>{r.actor?.name ?? t('ad.a.system')}</span>
+                            <Avatar name={personName(r.actor) ?? t('ad.a.system')} />
+                            <span>{personName(r.actor) ?? t('ad.a.system')}</span>
                           </div>
                           <div className="awhat">
                             <span className={`pill ${tone(r.action)}`}>{label('ad.a.act.', r.action)}</span>

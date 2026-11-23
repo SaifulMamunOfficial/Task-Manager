@@ -12,7 +12,7 @@ export const Err = ({ msg }: { msg?: string }) => (msg ? <div className="err" ro
 
 /** Status as a small glyph plus text (no coloured pill). */
 export function Status({ status, textless }: { status: string; textless?: boolean }) {
-  const { statusLabel } = useI18n();
+  const { statusLabel, personName } = useI18n();
   return (
     <span className={`st st-${status}`} title={statusLabel(status)}>
       <StatusGlyph status={status} />
@@ -22,7 +22,7 @@ export function Status({ status, textless }: { status: string; textless?: boolea
 }
 /** Coloured status pill with a dot (table rows, headers). */
 export function StatusPill({ status }: { status: string }) {
-  const { statusLabel } = useI18n();
+  const { statusLabel, personName } = useI18n();
   return <span className={`pill ${STATUS_TONE[status] ?? "gray"}`}>{statusLabel(status)}</span>;
 }
 
@@ -67,7 +67,7 @@ export function StatCard({ label, value, icon, tone = "blue", href }: { label: s
 
 /** Column headings for a task list (hidden when the list is narrow). */
 export function ListHead() {
-  const { t } = useI18n();
+  const { t, personName } = useI18n();
   return (
     <div className="lhead" aria-hidden="true">
       <span className="h-main">{t("tl.task")}</span><span className="h-due">{t("tl.deadline")}</span><span className="h-prog">{t("tl.progress")}</span><span className="h-stat">{t("tl.status")}</span><span className="h-acts" />
@@ -76,7 +76,7 @@ export function ListHead() {
 }
 
 export function Skeleton({ rows = 4 }: { rows?: number }) {
-  const { t } = useI18n();
+  const { t, personName } = useI18n();
   return (
     <div className="list" aria-busy="true" aria-label={t("c.loading")}>
       {Array.from({ length: rows }, (_, i) => <div key={i} className="skel" />)}
@@ -98,7 +98,7 @@ export function Empty({ title, children, icon = "inbox", actions }: { title: str
 }
 
 export function DueText({ due, status }: { due?: string | null; status: string }) {
-  const { dueInfo } = useI18n();
+  const { dueInfo, personName } = useI18n();
   const d = dueInfo(due, status);
   return <span className={d.tone === "late" ? "late" : d.tone === "soon" ? "soon" : d.tone === "none" ? "none" : ""}>{d.text}</span>;
 }
@@ -109,10 +109,10 @@ export function DueText({ due, status }: { due?: string | null; status: string }
  */
 export function TaskRow({ a, who, onChanged, child }: { a: any; who: "mine" | "given"; onChanged: () => void; child?: boolean }) {
   const toast = useToast();
-  const { t, n, err } = useI18n();
+  const { t, n, err, personName } = useI18n();
   const [modal, setModal] = useState<null | "decline" | "sendback">(null);
   const [busy, setBusy] = useState(false);
-  const person = who === "mine" ? a.assignedBy?.name : a.assignee?.name;
+  const person = who === "mine" ? personName(a.assignedBy) : personName(a.assignee);
 
   async function move(status: string, comment?: string, done?: string) {
     setBusy(true);
@@ -171,7 +171,7 @@ export function TaskRow({ a, who, onChanged, child }: { a: any; who: "mine" | "g
 }
 
 export function GroupHead({ title, count, tone }: { title: string; count: number; tone?: "late" }) {
-  const { n } = useI18n();
+  const { n, personName } = useI18n();
   return (
     <div className={`group-h ${tone ?? ""}`}>
       {title} <span className="count">{n(count)}</span>

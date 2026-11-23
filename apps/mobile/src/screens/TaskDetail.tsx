@@ -25,7 +25,7 @@ function Row({ icon, label, children }: { icon: IconName; label: string; childre
 }
 
 export default function TaskDetail() {
-  const { t, n, err, dueInfo, dateTime, timeAgo, fmtSize, statusLabel } = useI18n();
+  const { t, n, err, dueInfo, dateTime, timeAgo, fmtSize, statusLabel, personName } = useI18n();
   const { id } = useRoute<any>().params as { id: string };
   const [d, setD] = useState<Detail | null>(null);
   const [missing, setMissing] = useState(false);
@@ -58,7 +58,7 @@ export default function TaskDetail() {
 
   const a = d.assignment;
   const isAssignee = d.role === 'assignee';
-  const other = isAssignee ? a.assignedBy?.name : a.assignee?.name;
+  const other = isAssignee ? personName(a.assignedBy) : personName(a.assignee);
   const due = dueInfo(a.task.dueDate, a.status);
   const late = due.tone === 'late';
   const actions = (isAssignee ? ASSIGNEE_TRANSITIONS : GIVER_TRANSITIONS)[a.status] ?? [];
@@ -188,7 +188,7 @@ export default function TaskDetail() {
           <View style={[s.banner, { backgroundColor: C.redSoft }]}>
             <Icon name="close-circle" size={20} color={C.red} />
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ fontWeight: '800', color: C.red }}>{t('td.declinedBy', { name: a.assignee?.name ?? '' })}</Text>
+              <Text style={{ fontWeight: '800', color: C.red }}>{t('td.declinedBy', { name: personName(a.assignee) ?? '' })}</Text>
               {!!lastReason?.body && <Text style={{ color: C.ink }}>{lastReason.body}</Text>}
               {!isAssignee && <Text style={{ color: C.sub }}>{t('td.clarify')}</Text>}
             </View>
@@ -198,7 +198,7 @@ export default function TaskDetail() {
           <View style={[s.banner, { backgroundColor: C.amberSoft }]}>
             <Icon name="time" size={20} color={C.amber} />
             <View style={{ flex: 1, gap: 3 }}>
-              <Text style={{ fontWeight: '800', color: C.amber }}>{isAssignee ? t('td.waitingFor', { name: other ?? '' }) : t('td.submittedBy', { name: a.assignee?.name ?? '' })}</Text>
+              <Text style={{ fontWeight: '800', color: C.amber }}>{isAssignee ? t('td.waitingFor', { name: other ?? '' }) : t('td.submittedBy', { name: personName(a.assignee) ?? '' })}</Text>
               {!isAssignee && <Text style={{ color: C.sub }}>{t('td.reviewIt')}</Text>}
             </View>
           </View>
@@ -288,13 +288,13 @@ export default function TaskDetail() {
                     <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: statusColor(u.meta?.to ?? '') }} />
                   </View>
                 ) : (
-                  <Avatar name={u.user.name} size={28} />
+                  <Avatar name={personName(u.user)} size={28} />
                 )}
                 {i < d.updates.length - 1 && <View style={{ width: 2, flex: 1, backgroundColor: C.line, marginVertical: 3 }} />}
               </View>
               <View style={{ flex: 1, gap: 6, paddingBottom: 16 }}>
                 <Text style={{ color: C.ink, lineHeight: 20 }}>
-                  <Text style={{ fontWeight: '800' }}>{u.user.name}</Text>
+                  <Text style={{ fontWeight: '800' }}>{personName(u.user)}</Text>
                   {u.type === 'STATUS_CHANGE' && ` ${t('td.ev.status', { status: statusLabel(u.meta?.to ?? '') })}`}
                   {u.type === 'PROGRESS' && ` ${t('td.ev.progress', { n: u.meta?.progressPercent ?? 0 })}`}
                   <Text style={{ color: C.sub, fontSize: 12.5 }}>{'  '}{timeAgo(u.createdAt)}</Text>

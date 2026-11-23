@@ -18,7 +18,7 @@ type Group = { taskId: string; task: Assignment['task']; rows: Assignment[] };
 
 /** "Assigned by me": one card per task, with one line per person so you see who is where. */
 export default function GivenList() {
-  const { t, n, err, dueInfo } = useI18n();
+  const { t, n, err, dueInfo, personName } = useI18n();
   const { canGive } = useAuth();
   const nav = useNavigation<any>();
   const [rows, setRows] = useState<Assignment[] | null>(null);
@@ -59,7 +59,7 @@ export default function GivenList() {
     const needle = q.trim().toLowerCase();
     const map = new Map<string, Group>();
     (rows ?? [])
-      .filter((a) => matches(a, filter) && (!needle || (a.task.title + ' ' + (a.assignee?.name ?? '')).toLowerCase().includes(needle)))
+      .filter((a) => matches(a, filter) && (!needle || (a.task.title + ' ' + (personName(a.assignee) ?? '')).toLowerCase().includes(needle)))
       .forEach((a) => {
         const g = map.get(a.taskId) ?? { taskId: a.taskId, task: a.task, rows: [] };
         g.rows.push(a);
@@ -152,10 +152,10 @@ export default function GivenList() {
                   {g.rows.map((a, i) => (
                     <View key={a.id} style={i > 0 && { borderTopWidth: 1, borderTopColor: C.line }}>
                       <Pressable onPress={() => nav.navigate('TaskDetail', { id: a.id })} accessibilityRole="button" style={({ pressed }) => [s.person, pressed && { opacity: 0.85 }]}>
-                        <Avatar name={a.assignee?.name ?? '?'} size={30} />
+                        <Avatar name={personName(a.assignee) ?? '?'} size={30} />
                         <View style={{ flex: 1, gap: 6 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                            <Text style={{ color: C.ink, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{a.assignee?.name}</Text>
+                            <Text style={{ color: C.ink, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{personName(a.assignee)}</Text>
                             <StatusPill status={a.status} />
                           </View>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -182,7 +182,7 @@ export default function GivenList() {
       <ReasonModal
         visible={!!sendBack}
         title={t('tl.sendBackTitle')}
-        hint={sendBack ? t('tl.sendBackHint', { title: sendBack.task.title, name: sendBack.assignee?.name ?? '' }) : ''}
+        hint={sendBack ? t('tl.sendBackHint', { title: sendBack.task.title, name: personName(sendBack.assignee) ?? '' }) : ''}
         confirmLabel={t('act.sendBack')}
         onConfirm={(r) => move(sendBack!, 'IN_PROGRESS', r)}
         onClose={() => setSendBack(null)}

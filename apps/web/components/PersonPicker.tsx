@@ -6,7 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { Avatar } from './bits';
 import { Icon } from './icons';
 
-type U = { id: string; name: string; positions: { position: { id: string; title: string; titleBn?: string | null }; unit: { name: string; nameBn?: string | null } }[] };
+type U = { id: string; name: string; nameBn?: string | null; positions: { position: { id: string; title: string; titleBn?: string | null }; unit: { name: string; nameBn?: string | null } }[] };
 type Rule = { fromPositionId: string; toPositionId: string };
 
 /**
@@ -15,7 +15,7 @@ type Rule = { fromPositionId: string; toPositionId: string };
  */
 export default function PersonPicker({ value, onChange, fromPositionId }: { value: string[]; onChange: (ids: string[]) => void; fromPositionId?: string }) {
   const { me } = useAuth();
-  const { t, posTitle } = useI18n();
+  const { t, posTitle, personName } = useI18n();
   const [users, setUsers] = useState<U[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [q, setQ] = useState('');
@@ -29,7 +29,7 @@ export default function PersonPicker({ value, onChange, fromPositionId }: { valu
   const allowed = (u: U) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId));
 
   const list = users
-    .filter((u) => u.id !== me?.id && (u.name + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name + (p.unit.nameBn ?? '')).join(' ')).toLowerCase().includes(q.toLowerCase()))
+    .filter((u) => u.id !== me?.id && (u.name + ' ' + (u.nameBn ?? '') + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name + (p.unit.nameBn ?? '')).join(' ')).toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => Number(allowed(b)) - Number(allowed(a)) || a.name.localeCompare(b.name));
 
   const toggle = (u: U) => {
@@ -54,8 +54,8 @@ export default function PersonPicker({ value, onChange, fromPositionId }: { valu
       {picked.length > 0 && (
         <div className="chips">
           {picked.map((u) => (
-            <button type="button" key={u.id} className="chip on" onClick={() => toggle(u)} aria-label={t('pp.remove', { name: u.name })}>
-              {u.name} <Icon name="close" size={12} />
+            <button type="button" key={u.id} className="chip on" onClick={() => toggle(u)} aria-label={t('pp.remove', { name: personName(u) })}>
+              {personName(u)} <Icon name="close" size={12} />
             </button>
           ))}
         </div>
@@ -72,8 +72,8 @@ export default function PersonPicker({ value, onChange, fromPositionId }: { valu
           return (
             <label key={u.id} className={`person ${ok ? '' : 'disabled'} ${on ? 'picked' : ''}`} title={ok ? '' : t('pp.blocked')}>
               <input type="checkbox" checked={on} disabled={!ok} onChange={() => toggle(u)} />
-              <Avatar name={u.name} />
-              <span className="grow">{u.name}</span>
+              <Avatar name={personName(u)} />
+              <span className="grow">{personName(u)}</span>
               <span className="muted" style={{ fontSize: 12 }}>{u.positions.map((p) => posTitle(p.position)).join(', ')}</span>
             </label>
           );

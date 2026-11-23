@@ -17,7 +17,7 @@ const startOfDay = (d: Date) => {
 
 export default function Today() {
   const { me, canGive } = useAuth();
-  const { t, n, err, dueInfo, date } = useI18n();
+  const { t, n, err, dueInfo, date, personName } = useI18n();
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [mine, setMine] = useState<Assignment[] | null>(null);
@@ -93,7 +93,7 @@ export default function Today() {
 
   const TaskLine = ({ a, who, action }: { a: Assignment; who: 'mine' | 'given'; action?: 'accept' | 'approve' }) => {
     const due = dueInfo(a.task.dueDate, a.status);
-    const person = who === 'mine' ? a.assignedBy?.name : a.assignee?.name;
+    const person = who === 'mine' ? personName(a.assignedBy) : personName(a.assignee);
     return (
       <View style={s.line}>
         <Pressable onPress={() => nav.navigate('TaskDetail', { id: a.id })} accessibilityRole="button" style={({ pressed }) => [s.lineMain, pressed && { opacity: 0.8 }]}>

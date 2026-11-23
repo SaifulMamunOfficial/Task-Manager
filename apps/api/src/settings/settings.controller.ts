@@ -106,7 +106,7 @@ export class SettingsController {
     return this.prisma.auditLog.findMany({
       orderBy: { createdAt: 'desc' },
       take: Math.min(Number(limit) || 100, 500),
-      include: { actor: { select: { id: true, name: true } } },
+      include: { actor: { select: { id: true, name: true, nameBn: true } } },
     });
   }
 }

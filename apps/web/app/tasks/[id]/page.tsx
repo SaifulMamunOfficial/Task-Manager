@@ -24,7 +24,7 @@ const stepIndex = (s: string) => (s === 'BLOCKED' ? 2 : Math.max(0, STEPS.findIn
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
-  const { t, n, date, dateTime, statusLabel, err } = useI18n();
+  const { t, n, date, dateTime, statusLabel, err, personName } = useI18n();
   const [d, setD] = useState<any>(null);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
@@ -73,7 +73,7 @@ export default function TaskDetail() {
             <h1>{a.task.title}</h1>
             {a.task.priority === 'URGENT' && <span className="flag" title={t('prio.URGENT')} style={{ marginTop: 3 }}><Icon name="flag" size={17} /></span>}
           </div>
-          <p>{isAssignee ? t('td.givenToYou', { name: a.assignedBy.name, date: given }) : t('td.givenTo', { name: a.assignee.name, date: given })}</p>
+          <p>{isAssignee ? t('td.givenToYou', { name: personName(a.assignedBy), date: given }) : t('td.givenTo', { name: personName(a.assignee), date: given })}</p>
         </div>
         <Actions d={d} onChange={refresh} />
       </div>
@@ -97,16 +97,16 @@ export default function TaskDetail() {
       <div style={{ height: 14 }} />
       <Err msg={error ? err(error) : ''} />
       {a.status === 'DECLINED' && (
-        <div className="banner red"><Icon name="alert" /><div><b>{t('td.declinedBy', { name: a.assignee.name })}</b>{lastReason && <div>&quot;{lastReason.body}&quot;</div>}{!isAssignee && <div className="muted">{t('td.clarify')}</div>}</div></div>
+        <div className="banner red"><Icon name="alert" /><div><b>{t('td.declinedBy', { name: personName(a.assignee) })}</b>{lastReason && <div>&quot;{lastReason.body}&quot;</div>}{!isAssignee && <div className="muted">{t('td.clarify')}</div>}</div></div>
       )}
       {a.status === 'BLOCKED' && lastReason && (
         <div className="banner amber"><Icon name="alert" /><div><b>{t('td.blockedBanner')}</b> &quot;{lastReason.body}&quot;</div></div>
       )}
       {a.status === 'SUBMITTED' && !isAssignee && (
-        <div className="banner amber"><Icon name="clock" /><div><b>{t('td.submittedBy', { name: a.assignee.name })}</b> {t('td.reviewIt')}</div></div>
+        <div className="banner amber"><Icon name="clock" /><div><b>{t('td.submittedBy', { name: personName(a.assignee) })}</b> {t('td.reviewIt')}</div></div>
       )}
       {a.status === 'SUBMITTED' && isAssignee && (
-        <div className="banner"><Icon name="clock" /><div>{t('td.waitingFor', { name: a.assignedBy.name })}</div></div>
+        <div className="banner"><Icon name="clock" /><div>{t('td.waitingFor', { name: personName(a.assignedBy) })}</div></div>
       )}
 
       <div className="cols">
@@ -126,8 +126,8 @@ export default function TaskDetail() {
             <div className="panel-b">
               <dl className="props">
                 <dt>{t('td.status')}</dt><dd><StatusPill status={a.status} /></dd>
-                <dt>{t('td.givenBy')}</dt><dd className="row" style={{ gap: 7, flexWrap: 'nowrap' }}><Avatar name={a.assignedBy.name} />{a.assignedBy.name}</dd>
-                <dt>{t('td.assignedTo')}</dt><dd className="row" style={{ gap: 7, flexWrap: 'nowrap' }}><Avatar name={a.assignee.name} />{a.assignee.name}</dd>
+                <dt>{t('td.givenBy')}</dt><dd className="row" style={{ gap: 7, flexWrap: 'nowrap' }}><Avatar name={personName(a.assignedBy)} />{personName(a.assignedBy)}</dd>
+                <dt>{t('td.assignedTo')}</dt><dd className="row" style={{ gap: 7, flexWrap: 'nowrap' }}><Avatar name={personName(a.assignee)} />{personName(a.assignee)}</dd>
                 <dt>{t('td.deadline')}</dt><dd><DueText due={a.task.dueDate} status={a.status} />{a.task.dueDate && <div className="muted" style={{ fontSize: 12 }}>{dateTime(a.task.dueDate)}</div>}</dd>
                 <dt>{t('td.priority')}</dt><dd>{a.task.priority === 'URGENT' ? <span className="late">{t('prio.URGENT')}</span> : t(`prio.${a.task.priority}`)}</dd>
               </dl>
@@ -158,7 +158,7 @@ export default function TaskDetail() {
 function Actions({ d, onChange }: { d: any; onChange: () => void }) {
   const a = d.assignment;
   const toast = useToast();
-  const { t, err } = useI18n();
+  const { t, err, personName } = useI18n();
   const map = d.role === 'assignee' ? ASSIGNEE_TRANSITIONS : GIVER_TRANSITIONS;
   const options: string[] = (map as Record<string, string[]>)[a.status] ?? [];
   const [reasonFor, setReasonFor] = useState<string | null>(null);
@@ -203,7 +203,7 @@ function Actions({ d, onChange }: { d: any; onChange: () => void }) {
       {reasonFor && (
         <ReasonModal
           title={label(reasonFor)}
-          hint={reasonFor === 'DECLINED' ? t('td.declineHint') : t('td.sendBackHint', { name: a.assignee.name })}
+          hint={reasonFor === 'DECLINED' ? t('td.declineHint') : t('td.sendBackHint', { name: personName(a.assignee) })}
           confirmLabel={label(reasonFor)}
           danger={reasonFor === 'DECLINED'}
           onConfirm={(r) => run(reasonFor, r)}
@@ -219,7 +219,7 @@ function Actions({ d, onChange }: { d: any; onChange: () => void }) {
 function Progress({ d, onChange }: { d: any; onChange: () => void }) {
   const a = d.assignment;
   const toast = useToast();
-  const { t, n, err } = useI18n();
+  const { t, n, err, personName } = useI18n();
   const [busy, setBusy] = useState(false);
   const canEdit = d.role === 'assignee' && ['ACCEPTED', 'IN_PROGRESS', 'BLOCKED'].includes(a.status);
 
@@ -258,7 +258,7 @@ function Progress({ d, onChange }: { d: any; onChange: () => void }) {
 
 function Files({ files }: { files: { id: string; fileName: string; sizeBytes: number }[] }) {
   const toast = useToast();
-  const { t, fmtSize, err } = useI18n();
+  const { t, fmtSize, err, personName } = useI18n();
   if (!files?.length) return null;
   return (
     <div>
@@ -278,7 +278,7 @@ function Files({ files }: { files: { id: string; fileName: string; sizeBytes: nu
 
 function BriefUpload({ taskId, onDone }: { taskId: string; onDone: () => void }) {
   const toast = useToast();
-  const { t, err } = useI18n();
+  const { t, err, personName } = useI18n();
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   return (
@@ -316,7 +316,7 @@ function BriefUpload({ taskId, onDone }: { taskId: string; onDone: () => void })
 function Delegate({ d, onChange }: { d: any; onChange: () => void }) {
   const a = d.assignment;
   const toast = useToast();
-  const { t, err } = useI18n();
+  const { t, err, personName } = useI18n();
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -380,7 +380,7 @@ function Delegate({ d, onChange }: { d: any; onChange: () => void }) {
 // ---------- chain (depends on the admin's visibility mode) ----------
 
 function Chain({ chain, mode }: { chain: any; mode: string }) {
-  const { t, n } = useI18n();
+  const { t, n, personName } = useI18n();
   const s = chain.summary;
   return (
     <div className="panel">
@@ -410,7 +410,7 @@ function Chain({ chain, mode }: { chain: any; mode: string }) {
 function Activity({ d, canPost, onChange }: { d: any; canPost: boolean; onChange: () => void }) {
   const a = d.assignment;
   const toast = useToast();
-  const { t, n, statusLabel, timeAgo, dateTime, err } = useI18n();
+  const { t, n, statusLabel, timeAgo, dateTime, err, personName } = useI18n();
   const [body, setBody] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -459,10 +459,10 @@ function Activity({ d, canPost, onChange }: { d: any; canPost: boolean; onChange
       <div>
         {[...d.updates].reverse().map((u: any) => (
           <div key={u.id} className="act">
-            {u.type === 'STATUS_CHANGE' ? <span style={{ display: 'grid', placeItems: 'center' }} className={`st st-${u.meta?.to}`}><StatusGlyph status={u.meta?.to} size={18} /></span> : <Avatar name={u.user.name} />}
+            {u.type === 'STATUS_CHANGE' ? <span style={{ display: 'grid', placeItems: 'center' }} className={`st st-${u.meta?.to}`}><StatusGlyph status={u.meta?.to} size={18} /></span> : <Avatar name={personName(u.user)} />}
             <div>
               <div>
-                <span className="who">{u.user.name}</span>
+                <span className="who">{personName(u.user)}</span>
                 {u.type === 'STATUS_CHANGE' && <span className="evt"> {t('td.ev.status', { status: statusLabel(u.meta?.to) })}</span>}
                 {u.type === 'PROGRESS' && <span className="evt"> {t('td.ev.progress', { n: u.meta?.progressPercent })}</span>}
                 <span className="when" title={dateTime(u.createdAt)}>{timeAgo(u.createdAt)}</span>
@@ -479,7 +479,7 @@ function Activity({ d, canPost, onChange }: { d: any; canPost: boolean; onChange
 
 function Notes({ d, onChange }: { d: any; onChange: () => void }) {
   const toast = useToast();
-  const { t, timeAgo, err } = useI18n();
+  const { t, timeAgo, err, personName } = useI18n();
   const [body, setBody] = useState('');
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -499,7 +499,7 @@ function Notes({ d, onChange }: { d: any; onChange: () => void }) {
         <p className="muted" style={{ marginBottom: 8 }}>{t('td.notesHint')}</p>
         {d.notes.map((x: any) => (
           <div key={x.id} style={{ marginBottom: 10 }}>
-            <div><b>{x.user.name}</b> <span className="muted">{timeAgo(x.createdAt)}</span></div>
+            <div><b>{personName(x.user)}</b> <span className="muted">{timeAgo(x.createdAt)}</span></div>
             <div style={{ whiteSpace: 'pre-wrap' }}>{x.body}</div>
           </div>
         ))}

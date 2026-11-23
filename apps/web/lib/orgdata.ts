@@ -8,6 +8,7 @@ export type Secretariat = { id: string; name: string; nameBn?: string | null; se
 export type AdminUser = {
   id: string;
   name: string;
+  nameBn?: string | null;
   email: string;
   phone: string | null;
   isActive: boolean;

@@ -52,7 +52,7 @@ const SECTIONS: { key: string; title: string; tone?: 'late' }[] = [
 
 export default function MyTasks() {
   const { canGive } = useAuth();
-  const { t, n, err } = useI18n();
+  const { t, n, err, personName } = useI18n();
   const [all, setAll] = useState<any[] | null>(null);
   const [filter, setFilter] = useState('open');
   const [q, setQ] = useState('');
@@ -85,7 +85,7 @@ export default function MyTasks() {
 
   const list = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const rows = (all ?? []).filter((a) => matches(a, filter) && (!needle || (a.task.title + ' ' + (a.assignedBy?.name ?? '')).toLowerCase().includes(needle)));
+    const rows = (all ?? []).filter((a) => matches(a, filter) && (!needle || (a.task.title + ' ' + (personName(a.assignedBy) ?? '')).toLowerCase().includes(needle)));
     const due = (a: any) => (a.task.dueDate ? new Date(a.task.dueDate).getTime() : Infinity);
     return rows.sort((a, b) => (sort === 'newest' || filter === 'closed' ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : due(a) - due(b)));
   }, [all, filter, q, sort]);
@@ -143,7 +143,7 @@ export default function MyTasks() {
           </div>
 
           {view === 'board' ? (
-            <Board who="mine" rows={(all ?? []).filter((a) => !['DECLINED', 'CANCELLED'].includes(a.status) && (!q.trim() || (a.task.title + ' ' + (a.assignedBy?.name ?? '')).toLowerCase().includes(q.trim().toLowerCase())))} />
+            <Board who="mine" rows={(all ?? []).filter((a) => !['DECLINED', 'CANCELLED'].includes(a.status) && (!q.trim() || (a.task.title + ' ' + (personName(a.assignedBy) ?? '')).toLowerCase().includes(q.trim().toLowerCase())))} />
           ) : list.length === 0 ? (
             q ? (
               <Empty title={t('mt.noMatch')} icon="search" actions={<button onClick={() => setQ('')}>{t('c.clearSearch')}</button>}>

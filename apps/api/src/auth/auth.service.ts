@@ -83,6 +83,7 @@ export class AuthService {
       select: {
         id: true,
         name: true,
+        nameBn: true,
         email: true,
         phone: true,
         isAdmin: true,

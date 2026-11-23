@@ -26,6 +26,7 @@ class PositionAssignmentDto {
 
 class CreateUserDto {
   @IsString() @MinLength(1) name: string;
+  @IsOptional() @IsString() nameBn?: string;
   @IsEmail() email: string;
   @IsOptional() @IsString() phone?: string;
   @IsString() @MinLength(8) password: string;
@@ -40,6 +41,7 @@ class CreateUserDto {
 
 class UpdateUserDto {
   @IsOptional() @IsString() @MinLength(1) name?: string;
+  @IsOptional() @IsString() nameBn?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
   @IsOptional() @IsIn(['bn', 'en']) language?: string;
@@ -60,6 +62,7 @@ class ResetPasswordDto {
 const publicUser = {
   id: true,
   name: true,
+  nameBn: true,
   email: true,
   phone: true,
   isActive: true,
@@ -90,7 +93,7 @@ export class UsersController {
     return this.prisma.user.findMany({
       where: me.isAdmin ? {} : { isActive: true, isAdmin: false },
       orderBy: { name: 'asc' },
-      select: me.isAdmin ? publicUser : { id: true, name: true, positions: publicUser.positions },
+      select: me.isAdmin ? publicUser : { id: true, name: true, nameBn: true, positions: publicUser.positions },
     });
   }
 
@@ -112,6 +115,7 @@ export class UsersController {
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
+        nameBn: dto.nameBn || null,
         email,
         phone: dto.phone,
         isAdmin: !!dto.isAdmin,

@@ -34,7 +34,7 @@ function matches(a: Assignment, f: Filter) {
 }
 
 export default function TaskList({ who }: { who: Who }) {
-  const { t, n, err, dueInfo } = useI18n();
+  const { t, n, err, dueInfo, personName } = useI18n();
   const { canGive } = useAuth();
   const nav = useNavigation<NativeStackNavigationProp<any>>();
   const [rows, setRows] = useState<Assignment[] | null>(null);
@@ -85,7 +85,7 @@ export default function TaskList({ who }: { who: Who }) {
     const needle = q.trim().toLowerCase();
     return (rows ?? [])
       .filter((a) => matches(a, filter))
-      .filter((a) => !needle || (a.task.title + ' ' + ((who === 'mine' ? a.assignedBy?.name : a.assignee?.name) ?? '')).toLowerCase().includes(needle));
+      .filter((a) => !needle || (a.task.title + ' ' + ((who === 'mine' ? personName(a.assignedBy) : personName(a.assignee)) ?? '')).toLowerCase().includes(needle));
   }, [rows, filter, q, who]);
 
   const prefix = who === 'mine' ? 'mt' : 'gv';
@@ -122,7 +122,7 @@ export default function TaskList({ who }: { who: Who }) {
           rows === null ? <Empty title={t('c.loading')} icon="hourglass-outline" /> : q ? <Empty title={t('mt.noMatch')} text={t('mt.tryOther')} icon="search-outline" /> : <Empty title={t(emptyKey)} text={t(`${emptyKey}.t`)} />
         }
         renderItem={({ item: a }) => {
-          const person = who === 'mine' ? a.assignedBy?.name : a.assignee?.name;
+          const person = who === 'mine' ? personName(a.assignedBy) : personName(a.assignee);
           const due = dueInfo(a.task.dueDate, a.status);
           const late = due.tone === 'late';
           return (
@@ -187,7 +187,7 @@ export default function TaskList({ who }: { who: Who }) {
       <ReasonModal
         visible={!!sendBack}
         title={t('tl.sendBackTitle')}
-        hint={sendBack ? t('tl.sendBackHint', { title: sendBack.task.title, name: sendBack.assignee?.name ?? '' }) : ''}
+        hint={sendBack ? t('tl.sendBackHint', { title: sendBack.task.title, name: personName(sendBack.assignee) ?? '' }) : ''}
         confirmLabel={t('act.sendBack')}
         onConfirm={(r) => move(sendBack!, 'IN_PROGRESS', r)}
         onClose={() => setSendBack(null)}

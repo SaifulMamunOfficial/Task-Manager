@@ -30,7 +30,7 @@ const ADMIN_NAV: NavItem[] = [
 /** App frame: dark sidebar on desktop, slide-over drawer on phones. Also guards signed-out and temp-password users. */
 export default function Shell({ children }: { children: ReactNode }) {
   const { me, ready, logout, canGive } = useAuth();
-  const { t, n, posTitle } = useI18n();
+  const { t, n, posTitle, personName } = useI18n();
   const path = usePathname();
   const router = useRouter();
   const [counts, setCounts] = useState({ mine: 0, approve: 0, unread: 0 });
@@ -147,7 +147,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             <ThemeToggle className="on-dark" />
           </div>
           {menu && (
-            <div className="acct-menu" role="menu" aria-label={me.name}>
+            <div className="acct-menu" role="menu" aria-label={personName(me)}>
               {!locked && (
                 <Link href="/account" className="acct-item" role="menuitem">
                   <Icon name="bell" /> {t('nav.account')}
@@ -164,9 +164,9 @@ export default function Shell({ children }: { children: ReactNode }) {
             </div>
           )}
           <button className="acct-trigger" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-            <Avatar name={me.name} large />
+            <Avatar name={personName(me)} large />
             <span style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
-              <span className="me-name" style={{ display: "block" }}>{me.name}</span>
+              <span className="me-name" style={{ display: "block" }}>{personName(me)}</span>
               <span className="me-role" style={{ display: "block" }}>{role}</span>
             </span>
             <span className={`ch ${menu ? "up" : ""}`}><Icon name="chevron" size={16} /></span>

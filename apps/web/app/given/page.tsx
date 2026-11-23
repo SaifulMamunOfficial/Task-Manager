@@ -22,7 +22,7 @@ function matches(a: any, f: string) {
 
 export default function Given() {
   const { canGive } = useAuth();
-  const { t, n, err } = useI18n();
+  const { t, n, err, personName } = useI18n();
   const [all, setAll] = useState<any[] | null>(null);
   const [filter, setFilter] = useState('open');
   const [q, setQ] = useState('');
@@ -50,7 +50,7 @@ export default function Given() {
   // Group rows that belong to the same task (one task given to several people).
   const groups = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const rows = (all ?? []).filter((a) => matches(a, filter) && (!needle || (a.task.title + ' ' + a.assignee.name).toLowerCase().includes(needle)));
+    const rows = (all ?? []).filter((a) => matches(a, filter) && (!needle || (a.task.title + ' ' + personName(a.assignee)).toLowerCase().includes(needle)));
     const map = new Map<string, any[]>();
     rows.forEach((a) => map.set(a.taskId, [...(map.get(a.taskId) ?? []), a]));
     const out = [...map.values()];
@@ -105,7 +105,7 @@ export default function Given() {
           </div>
 
           {view === 'board' ? (
-            <Board who="given" rows={(all ?? []).filter((a) => !['DECLINED', 'CANCELLED'].includes(a.status) && (!q.trim() || (a.task.title + ' ' + a.assignee.name).toLowerCase().includes(q.trim().toLowerCase())))} />
+            <Board who="given" rows={(all ?? []).filter((a) => !['DECLINED', 'CANCELLED'].includes(a.status) && (!q.trim() || (a.task.title + ' ' + personName(a.assignee)).toLowerCase().includes(q.trim().toLowerCase())))} />
           ) : groups.length === 0 ? (
             q ? (
               <Empty title={t('mt.noMatch')} icon="search" actions={<button onClick={() => setQ('')}>{t('c.clearSearch')}</button>}>

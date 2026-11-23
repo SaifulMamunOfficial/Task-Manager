@@ -14,7 +14,7 @@ type OrgData = ReturnType<typeof useOrgData>;
 
 export default function Org() {
   const d = useOrgData();
-  const { t, n, posTitle, err, lang, unitName } = useI18n();
+  const { t, n, posTitle, err, lang, unitName, personName } = useI18n();
   const [openUnit, setOpenUnit] = useState<string | null>(null);
   const [modal, setModal] = useState<null | { kind: 'unit' } | { kind: 'position'; position?: Pos }>(null);
   const [showInactive, setShowInactive] = useState(false);
@@ -87,7 +87,7 @@ export default function Org() {
                         <span className="muted">{t('c.none')}</span>
                       ) : (
                         <>
-                          <span className="avstack">{members.slice(0, 4).map((m) => <Avatar key={m.id} name={m.name} />)}</span>
+                          <span className="avstack">{members.slice(0, 4).map((m) => <Avatar key={m.id} name={personName(m)} />)}</span>
                           <span className="muted">{n(members.length)}</span>
                         </>
                       )}
@@ -97,7 +97,7 @@ export default function Org() {
                       {secs.map((s) => <span key={s.id} className="tagchip">{unitName(s)}</span>)}
                     </div>
                     <div>{u.isActive ? <span className="pill green">{t('ad.o.active')}</span> : <span className="pill gray">{t('ad.o.inactive')}</span>}</div>
-                    <button className="ghost sm" tabIndex={-1} aria-label={t('ad.o.open', { name: u.name })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
+                    <button className="ghost sm" tabIndex={-1} aria-label={t('ad.o.open', { name: unitName(u) })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
                   </div>
                 );
               })}
@@ -153,7 +153,7 @@ export default function Org() {
 
 function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () => void }) {
   const toast = useToast();
-  const { t, n, posTitle, err, unitName } = useI18n();
+  const { t, n, posTitle, err, unitName, personName } = useI18n();
   const [name, setName] = useState(unit.name);
   const [nameBn, setNameBn] = useState(unit.nameBn ?? '');
   const [busy, setBusy] = useState(false);
@@ -225,7 +225,7 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
                 <div key={s.id} className="file" style={{ background: 'var(--surface)' }}>
                   <span className="grow">
                     <b>{unitName(s)}</b>
-                    <div className="muted" style={{ fontSize: 12.5 }}>{t('ad.o.secretaryIs', { name: sec?.name ?? t('ad.o.notSet') })}</div>
+                    <div className="muted" style={{ fontSize: 12.5 }}>{t('ad.o.secretaryIs', { name: personName(sec) ?? t('ad.o.notSet') })}</div>
                   </span>
                   <button className="danger sm" onClick={() => setConfirm({ sec: s.id, name: unitName(s) })}>{t('c.delete')}</button>
                 </div>
@@ -247,7 +247,7 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
                 <label htmlFor="ss">{t('ad.o.secretary')}</label>
                 <select id="ss" value={secUser} onChange={(e) => setSecUser(e.target.value)}>
                   <option value="">{t('ad.o.notSetCap')}</option>
-                  {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  {members.map((m) => <option key={m.id} value={m.id}>{personName(m)}</option>)}
                 </select>
               </div>
               <button disabled={busy || !secName.trim()}>{t('c.add')}</button>
@@ -259,8 +259,8 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
             {members.length === 0 && <p className="muted">{t('ad.o.noMembers')}</p>}
             {members.map((m) => (
               <div key={m.id} className="file" style={{ background: 'var(--surface)' }}>
-                <Avatar name={m.name} />
-                <span className="grow">{m.name}</span>
+                <Avatar name={personName(m)} />
+                <span className="grow">{personName(m)}</span>
                 <span className="tagrow" style={{ justifyContent: 'flex-end' }}>
                   {m.positions.filter((p) => p.unit.id === unit.id).map((p) => <span key={p.id} className="tagchip">{posTitle(p.position)}</span>)}
                 </span>
@@ -324,10 +324,9 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
 
 function NewUnitModal({ d, onClose, onCreated }: { d: OrgData; onClose: () => void; onCreated: (id: string) => void }) {
   const toast = useToast();
-  const { t, err } = useI18n();
+  const { t, err, unitName } = useI18n();
   const [name, setName] = useState('');
   const [nameBn, setNameBn] = useState('');
-  const { unitName } = useI18n();
   const [parentId, setParentId] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

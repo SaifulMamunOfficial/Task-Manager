@@ -15,7 +15,7 @@ export interface CreateTaskInput {
   fromPositionId?: string; // which of my positions I am giving this under
 }
 
-const userBrief = { select: { id: true, name: true } } as const;
+const userBrief = { select: { id: true, name: true, nameBn: true } } as const;
 const OPEN: AssignmentStatus[] = ['PENDING_ACCEPTANCE', 'ACCEPTED', 'IN_PROGRESS', 'BLOCKED', 'SUBMITTED'];
 
 @Injectable()

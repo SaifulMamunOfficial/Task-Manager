@@ -14,7 +14,7 @@ const COLUMNS: { key: string; statuses: string[]; tone: string }[] = [
 
 /** Kanban view: one column per stage, one card per assignment. Cards open the task. */
 export default function Board({ rows, who }: { rows: any[]; who: 'mine' | 'given' }) {
-  const { t, n } = useI18n();
+  const { t, n, personName } = useI18n();
   return (
     <div className="board" role="list">
       {COLUMNS.map((c) => {
@@ -27,7 +27,7 @@ export default function Board({ rows, who }: { rows: any[]; who: 'mine' | 'given
             <div className="bcol-b">
               {cards.length === 0 && <div className="bempty">{t('bd.empty')}</div>}
               {cards.map((a) => {
-                const person = who === 'mine' ? a.assignedBy?.name : a.assignee?.name;
+                const person = who === 'mine' ? personName(a.assignedBy) : personName(a.assignee);
                 return (
                   <Link key={a.id} href={`/tasks/${a.id}`} className="bcard">
                     <div className="bt">{a.task.title}</div>
@@ -61,7 +61,7 @@ export default function Board({ rows, who }: { rows: any[]; who: 'mine' | 'given
 
 /** List / Board dropdown, remembered per device. Looks and behaves like the other filter dropdowns. */
 export function ViewSwitch({ value, onChange }: { value: 'list' | 'board'; onChange: (v: 'list' | 'board') => void }) {
-  const { t } = useI18n();
+  const { t, personName } = useI18n();
   return (
     <select value={value} onChange={(e) => onChange(e.target.value as 'list' | 'board')} style={{ width: 'auto' }} aria-label={t('bd.view')}>
       <option value="list">{t('bd.list')}</option>

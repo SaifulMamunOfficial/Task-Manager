@@ -39,7 +39,7 @@ type Props = {
 
 /** One card per position the person holds (Secretary + Unit Head, etc.). */
 export default function PositionsEditor({ rows, onChange, units, positions, users, secretariats, selfId }: Props) {
-  const { t, posTitle, unitName } = useI18n();
+  const { t, posTitle, unitName, personName } = useI18n();
   const set = (i: number, patch: Partial<Row>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const makePrimary = (i: number) => onChange(rows.map((r, j) => ({ ...r, isPrimary: j === i })));
   const bosses = users.filter((u) => u.isActive && !u.isAdmin && u.id !== selfId);
@@ -71,7 +71,7 @@ export default function PositionsEditor({ rows, onChange, units, positions, user
               <select value={r.reportsToUserId} onChange={(e) => set(i, { reportsToUserId: e.target.value })}>
                 <option value="">{t('pe.nobody')}</option>
                 {bosses.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
+                  <option key={u.id} value={u.id}>{personName(u)}</option>
                 ))}
               </select>
             </div>

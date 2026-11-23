@@ -22,14 +22,14 @@ function generatePassword() {
 
 export default function Users() {
   const data = useOrgData();
-  const { t, n, posTitle, err, unitName } = useI18n();
+  const { t, n, posTitle, err, unitName, personName } = useI18n();
   const [selected, setSelected] = useState<string | 'new' | null>(null);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<StatusFilter>('active');
   const [unit, setUnit] = useState('');
   const [position, setPosition] = useState('');
 
-  const nameOf = (id: string | null) => data.users.find((u) => u.id === id)?.name;
+  const nameOf = (id: string | null) => personName(data.users.find((u) => u.id === id));
 
   const stats = useMemo(() => {
     const people = data.users.filter((u) => !u.isAdmin);
@@ -47,7 +47,7 @@ export default function Users() {
     if (status === 'inactive' && u.isActive) return false;
     if (unit && !u.positions.some((p) => p.unit.id === unit)) return false;
     if (position && !u.positions.some((p) => p.position.id === position)) return false;
-    return (u.name + ' ' + u.email).toLowerCase().includes(q.trim().toLowerCase());
+    return (u.name + ' ' + (u.nameBn ?? '') + ' ' + u.email).toLowerCase().includes(q.trim().toLowerCase());
   });
 
   const current = selected && selected !== 'new' ? data.users.find((u) => u.id === selected) : undefined;
@@ -115,9 +115,9 @@ export default function Users() {
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setSelected(u.id))}
               >
                 <div className="ucell-user">
-                  <Avatar name={u.name} large />
+                  <Avatar name={personName(u)} large />
                   <div style={{ minWidth: 0 }}>
-                    <div className="nm">{u.name}</div>
+                    <div className="nm">{personName(u)}</div>
                     <div className="em">{u.email}</div>
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export default function Users() {
                 <div>
                   {u.isAdmin ? <span className="pill purple">{t('ad.u.badgeAdmin')}</span> : u.isActive ? <span className="pill green">{t('ad.u.badgeActive')}</span> : <span className="pill gray">{t('ad.u.badgeInactive')}</span>}
                 </div>
-                <button className="ghost sm" aria-label={t('ad.u.edit', { name: u.name })} tabIndex={-1} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
+                <button className="ghost sm" aria-label={t('ad.u.edit', { name: personName(u) })} tabIndex={-1} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
               </div>
             );
           })}
@@ -164,12 +164,13 @@ export default function Users() {
 
 function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: OrgData; onClose: () => void; onSaved: (newId?: string) => Promise<void> }) {
   const { me } = useAuth();
-  const { t, err } = useI18n();
+  const { t, err, personName } = useI18n();
   const toast = useToast();
   const creating = !user;
   const initialRows: Row[] = user ? rowsFromUser(user) : [{ ...emptyRow(data.units, data.positions), isPrimary: true }];
 
   const [name, setName] = useState(user?.name ?? '');
+  const [nameBn, setNameBn] = useState(user?.nameBn ?? '');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [password, setPassword] = useState(creating ? generatePassword() : '');
@@ -201,6 +202,7 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
       if (creating) {
         const u = await post('/users', {
           name: name.trim(),
+          nameBn: nameBn.trim() || undefined,
           email: email.trim(),
           phone: phone.trim() || undefined,
           password,
@@ -208,10 +210,10 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
           language,
           positions: isAdmin ? undefined : rowsToPayload(rows),
         });
-        toast.ok(t('ad.u.added', { name: u.name }));
+        toast.ok(t('ad.u.added', { name: personName(u) }));
         await onSaved(u.id);
       } else {
-        await api(`/users/${user!.id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim(), phone: phone.trim() }) });
+        await api(`/users/${user!.id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim(), nameBn: nameBn.trim(), phone: phone.trim() }) });
         if (showPositions) await api(`/users/${user!.id}/positions`, { method: 'PATCH', body: JSON.stringify({ positions: rowsToPayload(rows) }) });
         toast.ok(t('ad.u.saved'));
         await onSaved();
@@ -243,7 +245,8 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
           <section>
             <div className="sec-title">{t('ad.u.profile')}</div>
             <div className="two">
-              <div><label htmlFor="u-name">{t('ad.u.fullName')}</label><input id="u-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus={creating} /></div>
+              <div><label htmlFor="u-name">{t('ad.u.fullNameEn')}</label><input id="u-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus={creating} /></div>
+              <div><label htmlFor="u-name-bn">{t('ad.u.fullNameBn')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label><input id="u-name-bn" value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('ad.u.fullNameBnPh')} /></div>
               <div><label htmlFor="u-phone">{t('ad.u.phone')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label><input id="u-phone" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
               {creating && (
                 <>
@@ -324,7 +327,7 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
 
       {modal === 'reset' && user && <ResetModal user={user} onClose={() => setModal(null)} />}
       {modal === 'deactivate' && user && (
-        <Modal title={user.isActive ? t('ad.u.deactModal', { name: user.name }) : t('ad.u.reactModal', { name: user.name })} onClose={() => setModal(null)}>
+        <Modal title={user.isActive ? t('ad.u.deactModal', { name: personName(user) }) : t('ad.u.reactModal', { name: personName(user) })} onClose={() => setModal(null)}>
           <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>{user.isActive ? t('ad.u.deactModalText') : t('ad.u.reactModalText')}</p>
           <div className="row" style={{ justifyContent: 'flex-end' }}>
             <button onClick={() => setModal(null)}>{t('c.cancel')}</button>
@@ -352,7 +355,7 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
 
 function ResetModal({ user, onClose }: { user: AdminUser; onClose: () => void }) {
   const toast = useToast();
-  const { t, err } = useI18n();
+  const { t, err, personName } = useI18n();
   const [pw, setPw] = useState(generatePassword());
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -370,7 +373,7 @@ function ResetModal({ user, onClose }: { user: AdminUser; onClose: () => void })
   }
 
   return (
-    <Modal title={t('ad.u.resetModal', { name: user.name })} onClose={onClose}>
+    <Modal title={t('ad.u.resetModal', { name: personName(user) })} onClose={onClose}>
       <p className="muted" style={{ fontSize: 14, marginBottom: 12 }}>{done ? t('ad.u.resetDoneText') : t('ad.u.resetModalText')}</p>
       <label htmlFor="r-pass">{t('ad.u.tempPass')}</label>
       <div className="pw-row">

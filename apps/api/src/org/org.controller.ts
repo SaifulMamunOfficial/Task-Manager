@@ -52,7 +52,7 @@ export class OrgController {
             isPrimary: true,
             reportsToUserId: true,
             secretariatId: true,
-            user: { select: { id: true, name: true } },
+            user: { select: { id: true, name: true, nameBn: true } },
             position: { select: { id: true, title: true, titleBn: true, level: true } },
           },
         },
