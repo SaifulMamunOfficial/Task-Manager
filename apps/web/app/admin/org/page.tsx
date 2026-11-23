@@ -13,7 +13,7 @@ type OrgData = ReturnType<typeof useOrgData>;
 
 export default function Org() {
   const d = useOrgData();
-  const { t, n, posTitle, err } = useI18n();
+  const { t, n, posTitle, err, lang } = useI18n();
   const [openUnit, setOpenUnit] = useState<string | null>(null);
   const [modal, setModal] = useState<null | { kind: 'unit' } | { kind: 'position'; position?: Pos }>(null);
   const [showInactive, setShowInactive] = useState(false);
@@ -31,39 +31,28 @@ export default function Org() {
 
   return (
     <>
-      <PageHead
-        title={t('nav.organization')}
-        subtitle={t('ad.o.sub')}
-        actions={
-          <>
-            <button onClick={() => setModal({ kind: 'position' })}><Icon name="plus" /> {t('ad.o.newPosition')}</button>
-            <button className="primary" onClick={() => setModal({ kind: 'unit' })}><Icon name="plus" /> {t('ad.o.newUnit')}</button>
-          </>
-        }
-      />
+      <PageHead title={t('nav.organization')} subtitle={t('ad.o.sub')} />
       <Err msg={d.error ? err(d.error) : ''} />
 
-      <div className="stats">
-        <StatCard label={t('ad.ov.units')} value={n(d.units.filter((u) => u.isActive).length)} icon="building" tone="purple" />
-        <StatCard label={t('ad.o.statSecretariats')} value={n(d.secretariats.length)} icon="inbox" tone="blue" />
-        <StatCard label={t('ad.o.statPositions')} value={n(d.positions.length)} icon="tasks" tone="amber" />
-        <StatCard label={t('ad.ov.people')} value={n(activeUsers.length)} icon="users" tone="green" href="/admin/users" />
-      </div>
-
-      <div className="cols">
-        <div>
-          <div className="sec-bar">
-            <h2>{t('ad.o.unitsTitle')}</h2>
-            {hiddenCount > 0 && (
-              <label className="check-inline">
-                <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> {t('ad.o.showInactive', { n: hiddenCount })}
-              </label>
-            )}
+      <div className="cols org-cols">
+        <div className="panel org-card">
+          <div className="panel-h">
+            <span className="row" style={{ gap: 8 }}>
+              {t('ad.o.unitsTitle')} <span className="count-pill">{n(d.units.filter((u) => u.isActive).length)}</span>
+            </span>
+            <span className="row" style={{ gap: 12 }}>
+              {hiddenCount > 0 && (
+                <label className="check-inline">
+                  <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> {t('ad.o.showInactive', { n: hiddenCount })}
+                </label>
+              )}
+              <button className="primary sm" onClick={() => setModal({ kind: 'unit' })}><Icon name="plus" size={14} /> {t('ad.o.newUnit')}</button>
+            </span>
           </div>
           {d.loading ? (
-            <Skeleton rows={3} />
+            <div style={{ padding: 16 }}><Skeleton rows={3} /></div>
           ) : (
-            <div className="list">
+            <div className="list flush">
               <div className="orow head" aria-hidden="true"><span>{t('ad.o.colUnit')}</span><span>{t('ad.o.colMembers')}</span><span>{t('ad.o.colSecs')}</span><span>{t('ad.o.colStatus')}</span><span /></div>
               {units.map((u) => {
                 const members = membersOf(u.id);
@@ -110,25 +99,30 @@ export default function Org() {
         </div>
 
         <aside>
-          <div className="panel">
+          <div className="panel org-card">
             <div className="panel-h">
-              {t('ad.o.positions')}
-              <button className="ghost sm" onClick={() => setModal({ kind: 'position' })} aria-label={t('ad.o.newPosition')}><Icon name="plus" size={14} /> {t('c.add')}</button>
+              <span className="row" style={{ gap: 8 }}>
+                {t('ad.o.positions')} <span className="count-pill">{n(d.positions.length)}</span>
+              </span>
+              <button className="sm" onClick={() => setModal({ kind: 'position' })} aria-label={t('ad.o.newPosition')}><Icon name="plus" size={14} /> {t('c.add')}</button>
             </div>
-            <div className="panel-b" style={{ paddingTop: 8 }}>
-              {d.positions.map((p) => (
-                <div key={p.id} className="prow">
-                  <span className="lvl" title={t('ad.o.levelTitle')}>{n(p.level)}</span>
-                  <div className="grow">
-                    <div style={{ fontWeight: 600 }}>{posTitle(p)}</div>
-                    <div className="muted" style={{ fontSize: 12.5 }}>
-                      {p.titleBn ? `${p.title} · ${p.titleBn}` : p.title} · {t(holders(p.id) === 1 ? 'c.person' : 'c.people', { n: holders(p.id) })}
+            <div className="panel-b" style={{ paddingTop: 4 }}>
+              {[...d.positions].sort((x, y) => x.level - y.level).map((p) => {
+                const other = lang === 'bn' ? p.title : p.titleBn;
+                const count = holders(p.id);
+                return (
+                  <div key={p.id} className="prow">
+                    <span className="lvl" title={t('ad.o.levelTitle')}>{n(p.level)}</span>
+                    <div className="grow">
+                      <div style={{ fontWeight: 600 }}>{posTitle(p)}</div>
+                      {other && other !== posTitle(p) && <div className="muted" style={{ fontSize: 12.5 }}>{other}</div>}
                     </div>
+                    <span className={`pill ${count ? 'blue' : 'gray'}`}>{t(count === 1 ? 'c.person' : 'c.people', { n: count })}</span>
+                    <button className="ghost sm" aria-label={t('ad.u.edit', { name: posTitle(p) })} onClick={() => setModal({ kind: 'position', position: p })}>{t('c.edit')}</button>
                   </div>
-                  <button className="ghost sm" aria-label={t('ad.u.edit', { name: posTitle(p) })} onClick={() => setModal({ kind: 'position', position: p })}>{t('c.edit')}</button>
-                </div>
-              ))}
-              <p className="muted" style={{ marginTop: 12, fontSize: 12.5 }}>
+                );
+              })}
+              <p className="muted org-note">
                 {t('ad.o.levelNote')} <Link href="/admin/rules">{t('nav.rules')}</Link>.
               </p>
             </div>

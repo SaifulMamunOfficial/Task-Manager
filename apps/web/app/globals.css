@@ -556,3 +556,15 @@ html[lang='bn'] body { line-height: 1.6; }
 .side-tools .theme-btn.on-dark { margin-left: 0; }
 
 .brand-logo { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: block; }
+
+/* ---------- organization: two matching cards ---------- */
+.org-cols { align-items: stretch; }
+.org-cols > * { display: flex; flex-direction: column; }
+.org-card { margin-bottom: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.org-card .panel-h { min-height: 54px; }
+.org-card .panel-b { flex: 1; }
+.org-card .list.flush { border: 0; box-shadow: none; border-radius: 0; background: transparent; }
+.org-card .list.flush .orow:first-child { border-top: 0; }
+.count-pill { background: var(--gray-bg); color: var(--text-2); border-radius: 99px; padding: 1px 9px; font-size: 12px; font-weight: 700; }
+.org-note { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 12.5px; }
+@media (max-width: 960px) { .org-cols > * { display: block; } .org-card { display: block; } }
