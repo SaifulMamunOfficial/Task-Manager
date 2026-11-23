@@ -627,3 +627,25 @@ html[lang='bn'] body { line-height: 1.6; }
 @media (max-width: 1180px) { .notif-grid { grid-template-columns: minmax(0, 1fr); } }
 .nsec-h { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 -6px; }
 .nsec-line { border-top: 1px solid var(--border); margin: 2px 0; }
+
+/* ---------- audit log: grouped by day, one change per row, details on click ---------- */
+.audit-day { margin-bottom: 22px; }
+.audit-day-h { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px 2px; }
+.arow { display: grid; grid-template-columns: 72px minmax(160px, 260px) minmax(0, 1fr) 20px; gap: 12px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--border); cursor: pointer; }
+.audit-day .list > .arow:first-child { border-top: 0; }
+.arow:hover { background: var(--surface-2); }
+.arow.sel { background: var(--accent-soft); }
+.arow > svg { color: var(--muted); transition: transform .15s; }
+.arow.sel > svg { transform: rotate(90deg); }
+.awho { display: flex; align-items: center; gap: 10px; font-weight: 600; min-width: 0; }
+.awho span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.awhat { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.adetail { padding: 12px 18px 14px 102px; background: var(--surface-2); border-top: 1px dashed var(--border); display: grid; gap: 6px; font-size: 13.5px; }
+.adl { display: flex; gap: 14px; align-items: baseline; }
+.adk { min-width: 150px; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+@media (max-width: 760px) {
+  .arow { grid-template-columns: 58px minmax(0, 1fr) 18px; }
+  .arow .awhat { grid-column: 2 / 3; }
+  .adetail { padding-left: 18px; }
+  .adl { flex-direction: column; gap: 2px; }
+}

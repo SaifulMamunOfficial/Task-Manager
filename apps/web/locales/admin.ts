@@ -285,6 +285,13 @@ export const admin: Record<string, [string, string]> = {
 
   // audit log
   'ad.a.sub': ['Every change made through the admin and task actions. Newest first.', 'অ্যাডমিন ও কাজের প্রতিটি পরিবর্তন। নতুন আগে।'],
+  'ad.a.search': ['Search by person or action', 'কারও নাম বা কাজ দিয়ে খুঁজুন'],
+  'ad.a.allPeople': ['Everyone', 'সবাই'],
+  'ad.a.allThings': ['All kinds of changes', 'সব ধরনের পরিবর্তন'],
+  'ad.a.yesterday': ['Yesterday', 'গতকাল'],
+  'ad.a.noDetails': ['No more details for this one.', 'এটির আর বিস্তারিত নেই।'],
+  'ad.a.none': ['No changes match.', 'কোনো পরিবর্তন মেলেনি।'],
+  'ad.a.more': ['Show older changes', 'আরও পুরনো পরিবর্তন দেখুন'],
   'ad.a.when': ['When', 'কখন'],
   'ad.a.who': ['Who', 'কে'],
   'ad.a.action': ['Action', 'কাজ'],
