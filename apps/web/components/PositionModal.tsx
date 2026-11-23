@@ -20,6 +20,7 @@ export function PositionModal({ position, d, onClose }: { position?: Pos; d: Org
   const [title, setTitle] = useState(position?.title ?? '');
   const [titleBn, setTitleBn] = useState(position?.titleBn ?? '');
   const [level, setLevel] = useState(String(position?.level ?? 10));
+  const [ownTeam, setOwnTeam] = useState(!!position?.ownTeamOnly);
   const [targets, setTargets] = useState<string[] | null>(position ? null : []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +45,7 @@ export function PositionModal({ position, d, onClose }: { position?: Pos; d: Org
     setBusy(true);
     setError('');
     try {
-      const body = JSON.stringify({ title: title.trim(), titleBn: titleBn.trim(), level: lvl });
+      const body = JSON.stringify({ title: title.trim(), titleBn: titleBn.trim(), level: lvl, ownTeamOnly: ownTeam });
       const saved = position ? await api<Pos>(`/positions/${position.id}`, { method: 'PATCH', body }) : await api<Pos>('/positions', { method: 'POST', body });
       // Only write the permission when it was loaded (or the position is new), so a slow load can never wipe it.
       if (targets !== null) await api('/settings/delegation', { method: 'PUT', body: JSON.stringify({ fromPositionId: saved.id, toPositionIds: chosen }) });
@@ -97,6 +98,10 @@ export function PositionModal({ position, d, onClose }: { position?: Pos; d: Org
             </div>
           )}
           {targets !== null && chosen.length === 0 && <div className="perm-warn">{t('ad.r.cannotGive')}</div>}
+          <label className="own-team">
+            <input type="checkbox" checked={ownTeam} onChange={(e) => setOwnTeam(e.target.checked)} />
+            <span>{t('ad.r.ownTeam')}<small className="muted">{t('ad.r.ownTeamHint')}</small></span>
+          </label>
         </div>
 
         <Err msg={error} />

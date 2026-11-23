@@ -188,7 +188,7 @@ export class UsersController {
   private async validatePositions(list: PositionAssignmentDto[], selfId?: string) {
     const seen = new Set<string>();
     for (const p of list) {
-      const key = `${p.unitId}:${p.positionId}`;
+      const key = `${p.unitId}:${p.positionId}:${p.secretariatId ?? ""}`;
       if (seen.has(key)) throw new BadRequestException('Duplicate unit/position pair');
       seen.add(key);
       if (p.reportsToUserId && p.reportsToUserId === selfId) throw new BadRequestException('A user cannot report to themselves');

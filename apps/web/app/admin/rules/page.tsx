@@ -144,7 +144,7 @@ function Delegation({ d }: { d: OrgData }) {
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setEdit(p))}
                 >
                   <span className="lvl">{n(p.level)}</span>
-                  <div className="nm">{posTitle(p)}</div>
+                  <div className="nm">{posTitle(p)}{p.ownTeamOnly && <span className="pill blue" style={{ marginLeft: 8, fontWeight: 600 }}>{t('ad.r.ownTeamTag')}</span>}</div>
                   <div className="tagrow">
                     {to.length === 0 ? (
                       <span className="pill amber">{t('ad.r.cannotGiveShort')}</span>

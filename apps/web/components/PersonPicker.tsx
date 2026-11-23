@@ -6,7 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { Avatar } from './bits';
 import { Icon } from './icons';
 
-type U = { id: string; name: string; nameBn?: string | null; positions: { position: { id: string; title: string; titleBn?: string | null }; unit: { name: string; nameBn?: string | null } }[] };
+type U = { id: string; name: string; nameBn?: string | null; positions: { secretariatId?: string | null; secretariat?: { name: string; nameBn?: string | null } | null; position: { id: string; title: string; titleBn?: string | null }; unit: { id?: string; name: string; nameBn?: string | null } }[] };
 type Rule = { fromPositionId: string; toPositionId: string };
 
 /**
@@ -15,18 +15,24 @@ type Rule = { fromPositionId: string; toPositionId: string };
  */
 export default function PersonPicker({ value, onChange, fromPositionId }: { value: string[]; onChange: (ids: string[]) => void; fromPositionId?: string }) {
   const { me } = useAuth();
-  const { t, posTitle, personName } = useI18n();
+  const { t, posTitle, personName, unitName } = useI18n();
   const [users, setUsers] = useState<U[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
+  const [limited, setLimited] = useState<string[]>([]);
   const [q, setQ] = useState('');
 
   useEffect(() => {
     api('/users').then(setUsers).catch(() => {});
     api('/settings/delegation').then(setRules).catch(() => {});
+    api<{ id: string; ownTeamOnly: boolean }[]>('/positions').then((ps) => setLimited(ps.filter((p) => p.ownTeamOnly).map((p) => p.id))).catch(() => {});
   }, []);
 
   const myPositionIds = useMemo(() => (fromPositionId ? [fromPositionId] : me?.positions.map((p) => p.position.id) ?? []), [me, fromPositionId]);
-  const allowed = (u: U) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId));
+  // Same rule the server applies: a head (secretary, divisional director) may only pick people of their own division.
+  const sameTeam = (fromId: string, p: U['positions'][number]) =>
+    !limited.includes(fromId) ||
+    (me?.positions ?? []).filter((g) => g.position.id === fromId).some((g) => (g.secretariatId ? p.secretariatId === g.secretariatId : p.unit.id === g.unit.id && !p.secretariatId));
+  const allowed = (u: U) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId && sameTeam(r.fromPositionId, p)));
 
   const list = users
     .filter((u) => u.id !== me?.id && (u.name + ' ' + (u.nameBn ?? '') + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name + (p.unit.nameBn ?? '')).join(' ')).toLowerCase().includes(q.toLowerCase()))
@@ -74,7 +80,7 @@ export default function PersonPicker({ value, onChange, fromPositionId }: { valu
               <input type="checkbox" checked={on} disabled={!ok} onChange={() => toggle(u)} />
               <Avatar name={personName(u)} />
               <span className="grow">{personName(u)}</span>
-              <span className="muted" style={{ fontSize: 12 }}>{u.positions.map((p) => posTitle(p.position)).join(', ')}</span>
+              <span className="muted" style={{ fontSize: 12 }}>{u.positions.map((p) => `${posTitle(p.position)} · ${unitName(p.secretariat ?? p.unit)}`).join(', ')}</span>
             </label>
           );
         })}

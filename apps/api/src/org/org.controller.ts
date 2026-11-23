@@ -19,6 +19,7 @@ class UpdateUnitDto {
 }
 class PositionDto {
   @IsString() @MinLength(1) title: string;
+  @IsOptional() @IsBoolean() ownTeamOnly?: boolean;
   @IsOptional() @IsString() titleBn?: string;
   @IsOptional() @IsInt() level?: number;
 }

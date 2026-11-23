@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from './api';
 
 export type Unit = { id: string; name: string; nameBn?: string | null; type: 'HEAD_OFFICE' | 'UNIT'; parentId: string | null; isActive: boolean };
-export type Pos = { id: string; title: string; titleBn?: string | null; level: number };
+export type Pos = { id: string; title: string; titleBn?: string | null; level: number; ownTeamOnly?: boolean };
 export type Secretariat = { id: string; name: string; nameBn?: string | null; secretaryUserId: string | null; unitId: string };
 export type AdminUser = {
   id: string;

@@ -50,8 +50,21 @@ export class TasksService {
       where: { fromPositionId: { in: giverPos.map((p) => p.positionId) }, toPositionId: { in: assigneePos.map((p) => p.positionId) } },
     });
     if (!rules.length) return null;
+
+    // A head (secretary, divisional director) may only give to people of their own division:
+    //  - head of a secretariat -> people in that same secretariat
+    //  - head of a unit/department (no secretariat) -> people directly in that same unit
+    const limited = new Set((await this.prisma.position.findMany({ where: { id: { in: giverPos.map((p) => p.positionId) }, ownTeamOnly: true }, select: { id: true } })).map((p) => p.id));
+    const sameTeam = (g: (typeof giverPos)[number], a: (typeof assigneePos)[number]) => (g.secretariatId ? a.secretariatId === g.secretariatId : a.unitId === g.unitId && !a.secretariatId);
+    const ok = rules.filter((r) => {
+      if (!limited.has(r.fromPositionId)) return true;
+      const gs = giverPos.filter((g) => g.positionId === r.fromPositionId);
+      const as = assigneePos.filter((a) => a.positionId === r.toPositionId);
+      return gs.some((g) => as.some((a) => sameTeam(g, a)));
+    });
+    if (!ok.length) return 'NOT_YOUR_TEAM' as const;
     // Prefer the assignee's primary position when several match.
-    const rule = rules.find((r) => assigneePos.find((a) => a.positionId === r.toPositionId)?.isPrimary) ?? rules[0];
+    const rule = ok.find((r) => assigneePos.find((a) => a.positionId === r.toPositionId)?.isPrimary) ?? ok[0];
     return { from: rule.fromPositionId, to: rule.toPositionId };
   }
 
@@ -84,10 +97,9 @@ export class TasksService {
     const pairs = new Map<string, { from: string; to: string }>();
     for (const id of ids) {
       const pair = await this.findAllowedPair(me.id, id, input.fromPositionId);
-      if (!pair) {
-        const name = users.find((u) => u.id === id)!.name;
-        throw new ForbiddenException(`Your position is not allowed to give tasks to ${name}`);
-      }
+      const name = users.find((u) => u.id === id)!.name;
+      if (pair === 'NOT_YOUR_TEAM') throw new ForbiddenException(`${name} is not in your own division, so you cannot give them a task`);
+      if (!pair) throw new ForbiddenException(`Your position is not allowed to give tasks to ${name}`);
       pairs.set(id, pair);
     }
 

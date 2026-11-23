@@ -71,6 +71,8 @@ model Unit {
 
 model Position {
   id             String                 @id @default(cuid())
+  // A head (secretary, divisional director) may give tasks only to people of their OWN division / team.
+  ownTeamOnly    Boolean                @default(false)
   title          String                 @unique
   titleBn        String?
   level          Int                    @default(10)
@@ -130,7 +132,7 @@ model UserPosition {
   isPrimary       Boolean      @default(false)
   createdAt       DateTime     @default(now())
 
-  @@unique([userId, unitId, positionId])
+  @@unique([userId, unitId, positionId, secretariatId])
   @@index([unitId])
   @@index([reportsToUserId])
 }

@@ -24,6 +24,7 @@ export default function Delegate({ assignmentId, onDone }: { assignmentId: strin
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState<Person[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
+  const [limited, setLimited] = useState<string[]>([]);
   const [picker, setPicker] = useState(false);
   const [assignees, setAssignees] = useState<string[]>([]);
   const [desc, setDesc] = useState('');
@@ -37,12 +38,17 @@ export default function Delegate({ assignmentId, onDone }: { assignmentId: strin
     if (!open || people.length) return;
     api<Person[]>('/users').then(setPeople).catch(() => {});
     api<Rule[]>('/settings/delegation').then(setRules).catch(() => {});
+    api<{ id: string; ownTeamOnly: boolean }[]>('/positions').then((ps) => setLimited(ps.filter((p) => p.ownTeamOnly).map((p) => p.id))).catch(() => {});
   }, [open, people.length]);
 
   if (canGive === false) return null;
 
   const myPositionIds = me?.positions.map((p) => p.position.id) ?? [];
-  const allowed = (u: Person) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId));
+  // Same rule the server applies: a head (secretary, divisional director) may only pick people of their own division.
+  const sameTeam = (fromId: string, p: Person['positions'][number]) =>
+    !limited.includes(fromId) ||
+    (me?.positions ?? []).filter((g) => g.position.id === fromId).some((g) => (g.secretariatId ? p.secretariatId === g.secretariatId : p.unit.id === g.unit.id && !p.secretariatId));
+  const allowed = (u: Person) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId && sameTeam(r.fromPositionId, p)));
 
   function setDay(d: Date) {
     const x = new Date(d);

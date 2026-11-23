@@ -32,6 +32,7 @@ export default function NewTask() {
   const [files, setFiles] = useState<PickedFile[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
+  const [limited, setLimited] = useState<string[]>([]);
   const [picker, setPicker] = useState(false);
   const [iosDate, setIosDate] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -40,10 +41,15 @@ export default function NewTask() {
   useEffect(() => {
     api<Person[]>('/users').then(setPeople).catch(() => {});
     api<Rule[]>('/settings/delegation').then(setRules).catch(() => {});
+    api<{ id: string; ownTeamOnly: boolean }[]>('/positions').then((ps) => setLimited(ps.filter((p) => p.ownTeamOnly).map((p) => p.id))).catch(() => {});
   }, []);
 
   const myPositionIds = useMemo(() => (fromPos ? [fromPos] : me?.positions.map((p) => p.position.id) ?? []), [me, fromPos]);
-  const allowed = (u: Person) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId));
+  // Same rule the server applies: a head (secretary, divisional director) may only pick people of their own division.
+  const sameTeam = (fromId: string, p: Person['positions'][number]) =>
+    !limited.includes(fromId) ||
+    (me?.positions ?? []).filter((g) => g.position.id === fromId).some((g) => (g.secretariatId ? p.secretariatId === g.secretariatId : p.unit.id === g.unit.id && !p.secretariatId));
+  const allowed = (u: Person) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId && sameTeam(r.fromPositionId, p)));
 
   // If the position used for giving changes, drop people it may not give to.
   useEffect(() => {
@@ -233,7 +239,7 @@ export function PeoplePicker({ visible, people, allowed, value, onChange, onClos
                 <Avatar name={u.name} size={34} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: '700', color: C.ink }}>{u.name}</Text>
-                  <Text style={{ color: C.sub, fontSize: 13 }} numberOfLines={1}>{u.positions.map((p) => `${posTitle(p.position)}, ${unitName(p.unit)}`).join(' · ')}</Text>
+                  <Text style={{ color: C.sub, fontSize: 13 }} numberOfLines={1}>{u.positions.map((p) => `${posTitle(p.position)}, ${unitName(p.secretariat ?? p.unit)}`).join(' · ')}</Text>
                   {!ok && <Text style={{ color: C.amber, fontSize: 12 }}>{t('pp.blocked')}</Text>}
                 </View>
                 <Icon name={on ? 'checkmark-circle' : 'ellipse-outline'} size={24} color={on ? C.brand : '#cbd5e1'} />

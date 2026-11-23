@@ -22,16 +22,19 @@ async function main() {
 
   // 3) Default positions
   for (const p of DEFAULT_POSITIONS) {
-    await prisma.position.upsert({ where: { title: p.title }, update: { titleBn: p.titleBn }, create: p });
+    // Secretaries and unit heads may give tasks only inside their own division.
+    const head = ['Secretary', 'Unit Head'].includes(p.title);
+    await prisma.position.upsert({ where: { title: p.title }, update: { titleBn: p.titleBn }, create: { ...p, ownTeamOnly: head } });
   }
 
   // 4) Default delegation matrix (admin can change it later)
   const pos = Object.fromEntries((await prisma.position.findMany()).map((p) => [p.title, p.id]));
   const matrix: Record<string, string[]> = {
-    Director: ['Assistant Director', 'Secretary', 'Unit Head', 'Member'],
-    'Assistant Director': ['Secretary', 'Unit Head', 'Member'],
-    Secretary: ['Unit Head', 'Member'],
-    'Unit Head': ['Assistant Director', 'Secretary', 'Member'],
+    // Chain of command: nobody skips the head of a division.
+    Director: ['Assistant Director', 'Secretary'],
+    'Assistant Director': ['Secretary', 'Unit Head'],
+    Secretary: ['Member'],
+    'Unit Head': ['Member'],
     Member: [],
   };
   for (const [from, tos] of Object.entries(matrix)) {
