@@ -34,7 +34,7 @@ export default function Org() {
       <PageHead title={t('nav.organization')} subtitle={t('ad.o.sub')} />
       <Err msg={d.error ? err(d.error) : ''} />
 
-      <div className="cols org-cols">
+      <div className="org-stack">
         <div className="panel org-card">
           <div className="panel-h">
             <span className="row" style={{ gap: 8 }}>
@@ -98,36 +98,40 @@ export default function Org() {
           )}
         </div>
 
-        <aside>
-          <div className="panel org-card">
-            <div className="panel-h">
-              <span className="row" style={{ gap: 8 }}>
-                {t('ad.o.positions')} <span className="count-pill">{n(d.positions.length)}</span>
-              </span>
-              <button className="sm" onClick={() => setModal({ kind: 'position' })} aria-label={t('ad.o.newPosition')}><Icon name="plus" size={14} /> {t('c.add')}</button>
-            </div>
-            <div className="panel-b" style={{ paddingTop: 4 }}>
-              {[...d.positions].sort((x, y) => x.level - y.level).map((p) => {
-                const other = lang === 'bn' ? p.title : p.titleBn;
-                const count = holders(p.id);
-                return (
-                  <div key={p.id} className="prow">
-                    <span className="lvl" title={t('ad.o.levelTitle')}>{n(p.level)}</span>
-                    <div className="grow">
-                      <div style={{ fontWeight: 600 }}>{posTitle(p)}</div>
-                      {other && other !== posTitle(p) && <div className="muted" style={{ fontSize: 12.5 }}>{other}</div>}
-                    </div>
-                    <span className={`pill ${count ? 'blue' : 'gray'}`}>{t(count === 1 ? 'c.person' : 'c.people', { n: count })}</span>
-                    <button className="ghost sm" aria-label={t('ad.u.edit', { name: posTitle(p) })} onClick={() => setModal({ kind: 'position', position: p })}>{t('c.edit')}</button>
-                  </div>
-                );
-              })}
-              <p className="muted org-note">
-                {t('ad.o.levelNote')} <Link href="/admin/rules">{t('nav.rules')}</Link>.
-              </p>
-            </div>
+        <div className="panel org-card">
+          <div className="panel-h">
+            <span className="row" style={{ gap: 8 }}>
+              {t('ad.o.positions')} <span className="count-pill">{n(d.positions.length)}</span>
+            </span>
+            <button className="primary sm" onClick={() => setModal({ kind: 'position' })} aria-label={t('ad.o.newPosition')}><Icon name="plus" size={14} /> {t('ad.o.newPosition')}</button>
           </div>
-        </aside>
+          <div className="list flush">
+            <div className="orow prow2 head" aria-hidden="true"><span>{t('ad.o.colLevel')}</span><span>{t('ad.o.colPosition')}</span><span>{t('ad.o.colOther')}</span><span>{t('ad.o.colPeople')}</span><span /></div>
+            {[...d.positions].sort((x, y) => x.level - y.level).map((p) => {
+              const other = lang === 'bn' ? p.title : p.titleBn;
+              const count = holders(p.id);
+              return (
+                <div
+                  key={p.id}
+                  className="orow prow2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setModal({ kind: 'position', position: p })}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setModal({ kind: 'position', position: p }))}
+                >
+                  <span className="lvl" title={t('ad.o.levelTitle')}>{n(p.level)}</span>
+                  <div className="nm">{posTitle(p)}</div>
+                  <div className="muted">{other && other !== posTitle(p) ? other : '—'}</div>
+                  <div><span className={`pill ${count ? 'blue' : 'gray'}`}>{t(count === 1 ? 'c.person' : 'c.people', { n: count })}</span></div>
+                  <button className="ghost sm" tabIndex={-1} aria-label={t('ad.u.edit', { name: posTitle(p) })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="muted org-note" style={{ margin: 0, padding: '12px 18px' }}>
+            {t('ad.o.levelNote')} <Link href="/admin/rules">{t('nav.rules')}</Link>.
+          </p>
+        </div>
       </div>
 
       {unit && <UnitDrawer key={unit.id} unit={unit} d={d} onClose={() => setOpenUnit(null)} />}

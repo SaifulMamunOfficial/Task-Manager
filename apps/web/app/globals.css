@@ -568,3 +568,9 @@ html[lang='bn'] body { line-height: 1.6; }
 .count-pill { background: var(--gray-bg); color: var(--text-2); border-radius: 99px; padding: 1px 9px; font-size: 12px; font-weight: 700; }
 .org-note { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 12.5px; }
 @media (max-width: 960px) { .org-cols > * { display: block; } .org-card { display: block; } }
+
+/* the two organization cards sit one above the other, each full width */
+.org-stack { display: flex; flex-direction: column; gap: 20px; }
+.org-stack .org-card { flex: none; }
+.orow.prow2 { grid-template-columns: 56px minmax(160px, 1.3fr) minmax(140px, 1.2fr) 130px 28px; }
+.orow.prow2 .nm { font-weight: 650; }
