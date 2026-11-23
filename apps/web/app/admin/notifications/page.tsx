@@ -47,11 +47,16 @@ export default function NotificationSettings() {
       {!data ? (
         <div className="list"><div className="skel" /><div className="skel" /></div>
       ) : (
-        <div style={{ maxWidth: 860 }}>
-          <p className="muted" style={{ marginBottom: 14, display: 'flex', gap: 6, alignItems: 'center' }}><Icon name="key" size={14} /> {t('an.secretNote')}</p>
-          <EmailPanel cfg={data.email} onSaved={load} />
-          <PushPanel cfg={data.push} onSaved={load} />
-        </div>
+        <>
+          <div className="tab-intro" style={{ marginTop: 0 }}>
+            <Icon name="key" size={17} />
+            <p>{t('an.secretNote')}</p>
+          </div>
+          <div className="notif-grid">
+            <EmailPanel cfg={data.email} onSaved={load} />
+            <PushPanel cfg={data.push} onSaved={load} />
+          </div>
+        </>
       )}
     </>
   );
@@ -119,6 +124,7 @@ function EmailPanel({ cfg, onSaved }: { cfg: EmailCfg; onSaved: () => void }) {
         <Switch on={f.enabled} onChange={(v) => setF({ ...f, enabled: v })} label={t('an.emailEnable')} />
       </div>
       <div className="panel-b stack" style={{ gap: 16 }}>
+        <h3 className="nsec-h">{t('an.secServer')}</h3>
         <div>
           <label>{t('an.presets')}</label>
           <div className="row" style={{ gap: 6 }}>
@@ -137,6 +143,8 @@ function EmailPanel({ cfg, onSaved }: { cfg: EmailCfg; onSaved: () => void }) {
           <Check checked={f.secure} onChange={(v) => setF({ ...f, secure: v })}>{t('an.secure')}</Check>
           <div className="muted">{t('an.secureHint')}</div>
         </div>
+        <div className="nsec-line" />
+        <h3 className="nsec-h">{t('an.secLogin')}</h3>
         <div className="two">
           <div><label htmlFor="e-user">{t('an.user')}</label><input id="e-user" value={f.user} onChange={(e) => setF({ ...f, user: e.target.value })} autoComplete="off" /></div>
           <div>
@@ -151,8 +159,9 @@ function EmailPanel({ cfg, onSaved }: { cfg: EmailCfg; onSaved: () => void }) {
         </div>
         <div><label htmlFor="e-from">{t('an.from')}</label><input id="e-from" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} placeholder="Task Manager <no-reply@example.com>" /></div>
 
+        <div className="nsec-line" />
+        <h3 className="nsec-h">{t('an.events')}</h3>
         <div>
-          <label>{t('an.events')}</label>
           <Check checked={f.events.reminders} onChange={(v) => setF({ ...f, events: { ...f.events, reminders: v } })}>{t('an.evReminders')}</Check>
           <Check checked={f.events.tasks} onChange={(v) => setF({ ...f, events: { ...f.events, tasks: v } })}>{t('an.evTasks')}</Check>
         </div>
@@ -162,8 +171,9 @@ function EmailPanel({ cfg, onSaved }: { cfg: EmailCfg; onSaved: () => void }) {
           <button className="primary" disabled={busy || !dirty} onClick={save}>{busy ? t('c.saving') : t('c.saveChanges')}</button>
         </div>
 
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-          <div style={{ fontWeight: 650, marginBottom: 8 }}>{t('an.testEmailTitle')}</div>
+        <div className="nsec-line" />
+        <h3 className="nsec-h">{t('an.testEmailTitle')}</h3>
+        <div>
           <div className="row" style={{ alignItems: 'flex-end', flexWrap: 'nowrap' }}>
             <div className="grow"><label htmlFor="e-to">{t('an.testTo')}</label><input id="e-to" type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} /></div>
             <button onClick={sendTest} disabled={testing || !testTo || dirty}>{testing ? t('an.testing') : t('an.testBtn')}</button>
@@ -243,7 +253,7 @@ function PushPanel({ cfg, onSaved }: { cfg: PushCfg; onSaved: () => void }) {
       <div className="panel-b stack" style={{ gap: 18 }}>
         <section>
           <div className="row between" style={{ marginBottom: 8 }}>
-            <b>{t('an.webTitle')}</b>
+            <h3 className="nsec-h" style={{ margin: 0 }}>{t('an.webTitle')}</h3>
             <Switch on={f.webEnabled} disabled={!hasKeys} onChange={(v) => setF({ ...f, webEnabled: v })} label={t('an.webEnable')} />
           </div>
           <p className="muted" style={{ marginBottom: 10 }}>{t('an.webEnable')}</p>
@@ -274,7 +284,7 @@ function PushPanel({ cfg, onSaved }: { cfg: PushCfg; onSaved: () => void }) {
 
         <section style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
           <div className="row between" style={{ marginBottom: 8 }}>
-            <b>{t('an.mobileTitle')}</b>
+            <h3 className="nsec-h" style={{ margin: 0 }}>{t('an.mobileTitle')}</h3>
             <Switch on={f.mobileEnabled} onChange={(v) => setF({ ...f, mobileEnabled: v })} label={t('an.mobileEnable')} />
           </div>
           <p className="muted" style={{ marginBottom: 10 }}>{t('an.mobileHint')}</p>

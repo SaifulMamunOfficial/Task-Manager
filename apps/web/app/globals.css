@@ -620,3 +620,10 @@ html[lang='bn'] body { line-height: 1.6; }
 .tab-intro svg { color: var(--accent); flex-shrink: 0; margin-top: 3px; }
 .tab-intro p { max-width: none; }
 .tabs + .tab-intro, .tabs + .row .tab-intro { margin-top: 6px; }
+
+/* ---------- email and push settings: full width, two cards side by side ---------- */
+.notif-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.notif-grid > .panel { margin-bottom: 0; }
+@media (max-width: 1180px) { .notif-grid { grid-template-columns: minmax(0, 1fr); } }
+.nsec-h { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 -6px; }
+.nsec-line { border-top: 1px solid var(--border); margin: 2px 0; }

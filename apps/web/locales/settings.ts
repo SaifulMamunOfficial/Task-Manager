@@ -41,6 +41,8 @@ export const settings: Record<string, [string, string]> = {
   // admin page
   'an.sub': ['Set where notifications are delivered. People always see them inside the app.', 'নোটিফিকেশন কোথায় পাঠানো হবে ঠিক করুন। অ্যাপের ভেতরে সবাই সবসময় দেখতে পান।'],
   'an.secretNote': ['Passwords and keys saved here are encrypted and are never shown again.', 'এখানে সেভ করা পাসওয়ার্ড ও কী এনক্রিপ্ট করা থাকে এবং আর কখনো দেখানো হয় না।'],
+  'an.secServer': ['Mail server', 'মেইল সার্ভার'],
+  'an.secLogin': ['Sign-in and sender', 'লগইন ও প্রেরক'],
   'an.email': ['Email', 'ইমেইল'],
   'an.on': ['On', 'চালু'],
   'an.off': ['Off', 'বন্ধ'],
