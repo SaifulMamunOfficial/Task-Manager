@@ -37,7 +37,7 @@ export default function Login() {
       <div className="auth-lang"><ThemeToggle /><LangSwitch /></div>
       <section className="auth-brand">
         <div className="brand" style={{ padding: 0 }}>
-          <span className="brand-mark"><Icon name="check" size={18} /></span> {t('app.name')}
+          <img className="brand-logo" src="/icon-192.png" alt="" width={30} height={30} /> {t('app.name')}
         </div>
         <div>
           <h2>{t('login.tag')}</h2>

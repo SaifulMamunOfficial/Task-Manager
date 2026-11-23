@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#3730a3"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#g)"/>
+  <!-- a tick drawn as a chain of three linked nodes: work passed on, step by step, until it is done -->
+  <g stroke="#ffffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M292 548 L440 696 L744 340"/>
+  </g>
+  <g fill="#ffffff">
+    <circle cx="292" cy="548" r="74"/>
+    <circle cx="440" cy="696" r="74"/>
+    <circle cx="744" cy="340" r="74"/>
+  </g>
+  <g fill="#4f46e5">
+    <circle cx="292" cy="548" r="26"/>
+    <circle cx="440" cy="696" r="26"/>
+    <circle cx="744" cy="340" r="26"/>
+  </g>
+</svg>

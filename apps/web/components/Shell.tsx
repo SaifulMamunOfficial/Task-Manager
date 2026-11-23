@@ -118,7 +118,7 @@ export default function Shell({ children }: { children: ReactNode }) {
     <div className="app">
       <aside className={`sidebar ${open ? 'open' : ''}`} aria-label={t('nav.main')}>
         <div className="brand">
-          <span className="brand-mark"><Icon name="check" size={18} /></span>
+          <img className="brand-logo" src="/icon-192.png" alt="" width={30} height={30} />
           {t('app.name')}
         </div>
         {!locked && !me.isAdmin && canGive && (

@@ -8,11 +8,43 @@
     "scheme": "taskmanager",
     "plugins": [
       "expo-secure-store",
-      ["expo-notifications", { "color": "#4f46e5" }],
-      ["@react-native-community/datetimepicker"]
+      [
+        "expo-notifications",
+        {
+          "color": "#4f46e5"
+        }
+      ],
+      [
+        "@react-native-community/datetimepicker"
+      ]
     ],
-    "ios": { "supportsTablet": false, "bundleIdentifier": "org.example.taskmanager" },
-    "android": { "package": "org.example.taskmanager", "permissions": ["POST_NOTIFICATIONS"] },
-    "extra": { "eas": { "projectId": "" } }
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "org.example.taskmanager"
+    },
+    "android": {
+      "package": "org.example.taskmanager",
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4f46e5"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4f46e5"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }

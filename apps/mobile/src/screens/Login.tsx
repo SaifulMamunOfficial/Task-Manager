@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth';
 import { useI18n } from '../i18n';
@@ -32,9 +32,7 @@ export default function Login() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.bg }} behavior="padding">
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, paddingTop: 20 + insets.top, paddingBottom: 20 + insets.bottom, gap: 22 }} keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: 'center', gap: 10 }}>
-          <View style={[{ width: 68, height: 68, borderRadius: 22, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center' }, SH]}>
-            <Icon name="checkmark-done" size={36} color="#fff" />
-          </View>
+          <Image source={require('../../assets/icon.png')} style={[{ width: 76, height: 76, borderRadius: 22 }, SH]} accessibilityLabel={t('app.name')} />
           <Text style={{ fontSize: 26, fontWeight: '800', color: C.ink }}>{t('app.name')}</Text>
           <Text style={{ color: C.sub, textAlign: 'center', lineHeight: 22 }}>{t('login.tag')}</Text>
         </View>

@@ -554,3 +554,5 @@ html[lang='bn'] body { line-height: 1.6; }
 .lang-btn { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
 .side-tools { display: flex; align-items: center; gap: 8px; padding: 0 4px 10px; }
 .side-tools .theme-btn.on-dark { margin-left: 0; }
+
+.brand-logo { width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; display: block; }
