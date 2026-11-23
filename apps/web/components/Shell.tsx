@@ -37,6 +37,8 @@ export default function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [topMenu, setTopMenu] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,13 +61,22 @@ export default function Shell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setOpen(false);
     setMenu(false);
+    setTopMenu(false);
   }, [path]);
 
   // The account menu closes on outside click and Escape.
   useEffect(() => {
     if (!menu) return;
-    const onDown = (e: MouseEvent) => !menuRef.current?.contains(e.target as Node) && setMenu(false);
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(false);
+    const onDown = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(false);
+      if (!topRef.current?.contains(e.target as Node)) setTopMenu(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenu(false);
+        setTopMenu(false);
+      }
+    };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -141,20 +152,27 @@ export default function Shell({ children }: { children: ReactNode }) {
             })}
           </nav>
         )}
-        <div className="sidebar-foot" ref={menuRef}>
-          <div className="side-tools">
-            <LangToggle className="on-dark" />
-            <ThemeToggle className="on-dark" />
-          </div>
+        <div className={`sidebar-foot ${me.isAdmin && !locked ? 'admin-foot' : ''}`} ref={menuRef}>
+          {!(me.isAdmin && !locked) && (
+            <div className="side-tools">
+              <LangToggle className="on-dark" />
+              <ThemeToggle className="on-dark" />
+            </div>
+          )}
           {menu && (
             <div className="acct-menu" role="menu" aria-label={personName(me)}>
               {!locked && (
-                <Link href="/account" className="acct-item" role="menuitem">
+                <Link href="/profile" className="acct-item" role="menuitem">
+                  <Icon name="users" /> {t('nav.profile')}
+                </Link>
+              )}
+              {!locked && (
+                <Link href="/profile?tab=notifications" className="acct-item" role="menuitem">
                   <Icon name="bell" /> {t('nav.account')}
                 </Link>
               )}
               {!locked && (
-                <Link href="/change-password" className="acct-item" role="menuitem">
+                <Link href="/profile?tab=password" className="acct-item" role="menuitem">
                   <Icon name="key" /> {t('nav.changePassword')}
                 </Link>
               )}
@@ -164,7 +182,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             </div>
           )}
           <button className="acct-trigger" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-            <Avatar name={personName(me)} large />
+            <Avatar name={personName(me)} large id={me.id} ver={me.avatarVer} />
             <span style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
               <span className="me-name" style={{ display: "block" }}>{personName(me)}</span>
               <span className="me-role" style={{ display: "block" }}>{role}</span>
@@ -193,6 +211,51 @@ export default function Shell({ children }: { children: ReactNode }) {
           )}
           </span>
         </div>
+        {me.isAdmin && !locked && (
+          <header className="admin-top">
+            <nav className="crumbs" aria-label="breadcrumb">
+              <span>{t('nav.administration')}</span>
+              {nav.filter((i) => active(i)).slice(-1).map((i) => (
+                <span key={i.href} className="cur"><Icon name="chevron" size={14} />{t(i.label)}</span>
+              ))}
+              {path.startsWith('/profile') && <span className="cur"><Icon name="chevron" size={14} />{t('nav.profile')}</span>}
+            </nav>
+            <div className="admin-top-r">
+              <LangToggle />
+              <ThemeToggle />
+              <div className="top-acct" ref={topRef}>
+                <button className="top-acct-btn" aria-haspopup="menu" aria-expanded={topMenu} onClick={() => setTopMenu(!topMenu)}>
+                  <Avatar name={personName(me)} id={me.id} ver={me.avatarVer} size={34} />
+                  <span className="top-acct-txt">
+                    <span className="top-acct-name">{personName(me)}</span>
+                    <span className="top-acct-role">{role}</span>
+                  </span>
+                  <span className={`ch ${topMenu ? 'up' : ''}`}><Icon name="chevron" size={16} /></span>
+                </button>
+                {topMenu && (
+                  <div className="top-acct-menu" role="menu">
+                    <Link href="/profile" className="top-acct-head" role="menuitem">
+                      <Avatar name={personName(me)} id={me.id} ver={me.avatarVer} size={44} />
+                      <span className="top-acct-id">
+                        <strong>{personName(me)}</strong>
+                        <span>{me.email}</span>
+                      </span>
+                    </Link>
+                    <Link href="/profile" className="top-acct-item" role="menuitem">
+                      <Icon name="users" /> {t('nav.profile')}
+                    </Link>
+                    <Link href="/profile?tab=password" className="top-acct-item" role="menuitem">
+                      <Icon name="key" /> {t('nav.changePassword')}
+                    </Link>
+                    <button className="top-acct-item danger" role="menuitem" onClick={() => logout()}>
+                      <Icon name="logout" /> {t('nav.signOut')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+        )}
         <main className="page">{children}</main>
       </div>
     </div>

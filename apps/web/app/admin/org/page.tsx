@@ -29,6 +29,15 @@ export default function Org() {
     () => [...d.units].filter((u) => showInactive || u.isActive).sort((a, b) => Number(b.type === 'HEAD_OFFICE') - Number(a.type === 'HEAD_OFFICE') || a.name.localeCompare(b.name)),
     [d.units, showInactive],
   );
+  // One flat list: each department / head office, followed by its secretariats.
+  const rows = useMemo(
+    () =>
+      units.flatMap((u) => [
+        { kind: 'unit' as const, unit: u },
+        ...d.secretariats.filter((x) => x.unitId === u.id).sort((x, y) => x.name.localeCompare(y.name)).map((sec) => ({ kind: 'sec' as const, unit: u, sec })),
+      ]),
+    [units, d.secretariats],
+  );
   const hiddenCount = d.units.filter((u) => !u.isActive).length;
   const unit = d.units.find((u) => u.id === openUnit);
 
@@ -48,7 +57,7 @@ export default function Org() {
         <div className="panel org-card">
           <div className="panel-h">
             <span className="row" style={{ gap: 8 }}>
-              {t('ad.o.unitsTitle')} <span className="count-pill">{n(d.units.filter((u) => u.isActive).length)}</span>
+              {t('ad.o.structure')} <span className="count-pill">{n(rows.length)}</span>
             </span>
             <span className="row" style={{ gap: 12 }}>
               {hiddenCount > 0 && (
@@ -56,54 +65,57 @@ export default function Org() {
                   <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> {t('ad.o.showInactive', { n: hiddenCount })}
                 </label>
               )}
-              <button className="primary sm" onClick={() => setModal({ kind: 'unit' })}><Icon name="plus" size={14} /> {t('ad.o.newUnit')}</button>
+              <button className="primary sm" onClick={() => setModal({ kind: 'unit' })}><Icon name="plus" size={14} /> {t('ad.o.addNew')}</button>
             </span>
           </div>
           {d.loading ? (
             <div style={{ padding: 16 }}><Skeleton rows={3} /></div>
           ) : (
             <div className="list flush">
-              <div className="orow head" aria-hidden="true"><span>{t('ad.o.colUnit')}</span><span>{t('ad.o.colMembers')}</span><span>{t('ad.o.colSecs')}</span><span>{t('ad.o.colStatus')}</span><span /></div>
-              {units.map((u) => {
-                const members = membersOf(u.id);
-                const secs = d.secretariats.filter((s) => s.unitId === u.id);
+              <div className="orow org3 head" aria-hidden="true"><span>{t('ad.o.colName')}</span><span>{t('ad.o.colType')}</span><span>{t('ad.o.colMembers')}</span><span>{t('ad.o.colStatus')}</span><span /></div>
+              {rows.map((r) => {
+                const isSec = r.kind === 'sec';
+                const u = r.unit;
+                const members = isSec ? divisionMembers(r.sec.id) : membersOf(u.id);
                 const parent = d.units.find((x) => x.id === u.parentId);
+                const label = isSec ? unitName(r.sec) : unitName(u);
+                const sub = isSec ? t('ad.o.under', { name: unitName(u) }) : u.type === 'HEAD_OFFICE' ? '' : parent ? t('ad.o.under', { name: unitName(parent) }) : '';
+                const typeLabel = isSec ? t('ad.o.typeSec') : u.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : t('ad.o.typeDept');
+                const typeTone = isSec ? 'blue' : u.type === 'HEAD_OFFICE' ? 'gray' : 'purple';
+                const id = isSec ? r.sec.id : u.id;
                 return (
                   <div
-                    key={u.id}
-                    className={`orow ${u.isActive ? '' : 'off'} ${openUnit === u.id ? 'sel' : ''}`}
+                    key={(isSec ? 's-' : 'u-') + id}
+                    className={`orow org3 ${isSec ? 'sub' : ''} ${u.isActive ? '' : 'off'} ${openUnit === u.id ? 'sel' : ''}`}
                     role="button"
                     tabIndex={0}
                     onClick={() => setOpenUnit(u.id)}
                     onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpenUnit(u.id))}
                   >
                     <div className="ucell-user">
-                      <span className={`cell-icon ${u.type === 'HEAD_OFFICE' ? 'tone-blue' : 'tone-purple'}`} style={{ width: 38, height: 38, borderRadius: 10 }}><Icon name="building" size={18} /></span>
+                      <span className={`cell-icon ${isSec ? 'tone-blue' : u.type === 'HEAD_OFFICE' ? 'tone-gray' : 'tone-purple'}`} style={{ width: 38, height: 38, borderRadius: 10 }}><Icon name={isSec ? 'inbox' : 'building'} size={18} /></span>
                       <div style={{ minWidth: 0 }}>
-                        <div className="nm">{unitName(u)}</div>
-                        <div className="em">{u.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : parent ? t('ad.o.under', { name: unitName(parent) }) : t('ad.o.unitBranch')}</div>
+                        <div className="nm">{label}</div>
+                        {sub && <div className="em">{sub}</div>}
                       </div>
                     </div>
+                    <div><span className={`pill ${typeTone}`}>{typeLabel}</span></div>
                     <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
                       {members.length === 0 ? (
                         <span className="muted">{t('c.none')}</span>
                       ) : (
                         <>
-                          <span className="avstack">{members.slice(0, 4).map((m) => <Avatar key={m.id} name={personName(m)} />)}</span>
+                          <span className="avstack">{members.slice(0, 4).map((m) => <Avatar key={m.id} name={personName(m)} id={m.id} ver={(m as any).avatarVer} />)}</span>
                           <span className="muted">{n(members.length)}</span>
                         </>
                       )}
                     </div>
-                    <div className="tagrow">
-                      {secs.length === 0 && <span className="muted">{t('c.none')}</span>}
-                      {secs.map((s) => <span key={s.id} className="tagchip">{unitName(s)} <b>{n(divisionMembers(s.id).length)}</b></span>)}
-                    </div>
                     <div>{u.isActive ? <span className="pill green">{t('ad.o.active')}</span> : <span className="pill gray">{t('ad.o.inactive')}</span>}</div>
-                    <button className="ghost sm" tabIndex={-1} aria-label={t('ad.o.open', { name: unitName(u) })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
+                    <button className="ghost sm" tabIndex={-1} aria-label={t('ad.o.open', { name: label })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
                   </div>
                 );
               })}
-              {units.length === 0 && <div className="empty"><b>{t('ad.o.noUnits')}</b></div>}
+              {rows.length === 0 && <div className="empty"><b>{t('ad.o.noUnits')}</b></div>}
             </div>
           )}
         </div>
@@ -160,7 +172,7 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
   const [nameBn, setNameBn] = useState(unit.nameBn ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [confirm, setConfirm] = useState<null | 'toggle' | { sec: string; name: string }>(null);
+  const [confirm, setConfirm] = useState<null | 'toggle' | 'delete' | { sec: string; name: string }>(null);
   const [secName, setSecName] = useState('');
   const [secNameBn, setSecNameBn] = useState('');
   const [secUser, setSecUser] = useState('');
@@ -265,7 +277,7 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
           </section>
 
           <section>
-            <div className="sec-title">{t('ad.o.unitMembers')} <span>{n(members.length)}</span></div>
+            <div className="sec-title">{unit.type === 'HEAD_OFFICE' ? t('ad.o.headMembers') : t('ad.o.unitMembers')} <span>{n(members.length)}</span></div>
             {members.length === 0 && <p className="muted">{t('ad.o.noMembers')}</p>}
             {members.map((m) => (
               <div key={m.id} className="file" style={{ background: 'var(--surface)' }}>
@@ -289,6 +301,13 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
                     <div className="muted">{unit.isActive ? t('ad.o.deactUnitText') : t('ad.o.reactUnitText')}</div>
                   </div>
                   <button className={unit.isActive ? 'danger' : ''} onClick={() => setConfirm('toggle')}>{unit.isActive ? t('ad.o.deactBtn') : t('ad.o.reactBtn')}</button>
+                </div>
+                <div className="row between" style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+                  <div>
+                    <b>{t('ad.o.delUnit')}</b>
+                    <div className="muted">{t('ad.o.delUnitText')}</div>
+                  </div>
+                  <button className="danger" onClick={() => setConfirm('delete')}>{t('c.delete')}</button>
                 </div>
               </div>
             </section>
@@ -317,6 +336,15 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
           </div>
         </Modal>
       )}
+      {confirm === 'delete' && (
+        <Modal title={t('ad.o.delSecTitle', { name: unitName(unit) })} onClose={() => setConfirm(null)}>
+          <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>{t('ad.o.delUnitModal')}</p>
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
+            <button onClick={() => setConfirm(null)}>{t('c.cancel')}</button>
+            <button className="danger" onClick={async () => { const ok = await run(() => api(`/units/${unit.id}`, { method: 'DELETE' }), t('ad.o.unitDeleted')); setConfirm(null); if (ok) onClose(); }}>{t('c.delete')}</button>
+          </div>
+        </Modal>
+      )}
       {confirm && typeof confirm === 'object' && (
         <Modal title={t('ad.o.delSecTitle', { name: confirm.name })} onClose={() => setConfirm(null)}>
           <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>{t('ad.o.delSecText')}</p>
@@ -334,47 +362,100 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
 
 function NewUnitModal({ d, onClose, onCreated }: { d: OrgData; onClose: () => void; onCreated: (id: string) => void }) {
   const toast = useToast();
-  const { t, err, unitName } = useI18n();
+  const { t, err, unitName, personName } = useI18n();
+  const head = d.units.find((u) => u.type === 'HEAD_OFFICE');
+  const [kind, setKind] = useState<'SEC' | 'DEPT'>('SEC');
   const [name, setName] = useState('');
   const [nameBn, setNameBn] = useState('');
-  const [parentId, setParentId] = useState('');
+  const [parentId, setParentId] = useState(head?.id ?? '');
+  const [secretary, setSecretary] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const people = d.users.filter((u) => u.isActive && !u.isAdmin);
+
+  function pick(k: 'SEC' | 'DEPT') {
+    setKind(k);
+    setParentId(k === 'SEC' ? head?.id ?? '' : '');
+    setError('');
+  }
 
   async function go(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError('');
     try {
-      const u = await post('/units', { name: name.trim(), nameBn: nameBn.trim() || undefined, type: 'UNIT', parentId: parentId || undefined });
-      toast.ok(t('ad.o.unitCreated'));
-      await d.reload();
-      onCreated(u.id);
+      if (kind === 'SEC') {
+        await post('/secretariats', { name: name.trim(), nameBn: nameBn.trim() || undefined, unitId: parentId, secretaryUserId: secretary || undefined });
+        toast.ok(t('ad.o.secAdded'));
+        await d.reload();
+        onClose();
+      } else {
+        const u = await post('/units', { name: name.trim(), nameBn: nameBn.trim() || undefined, type: 'UNIT', parentId: parentId || undefined });
+        toast.ok(t('ad.o.unitCreated'));
+        await d.reload();
+        onCreated(u.id);
+      }
     } catch (e2: any) {
       setError(err(e2.message));
       setBusy(false);
     }
   }
 
+  const kinds = [
+    { k: 'SEC' as const, icon: 'inbox' as const, title: t('ad.o.typeSec'), text: t('ad.o.kindSecText') },
+    { k: 'DEPT' as const, icon: 'building' as const, title: t('ad.o.typeDept'), text: t('ad.o.kindDeptText') },
+  ];
+
   return (
-    <Modal title={t('ad.o.newUnitTitle')} onClose={onClose}>
+    <Modal title={t('ad.o.addTitle')} onClose={onClose}>
       <form className="stack" onSubmit={go}>
+        <div className="kind-pick" role="radiogroup" aria-label={t('ad.o.colType')}>
+          {kinds.map((o) => (
+            <button type="button" key={o.k} role="radio" aria-checked={kind === o.k} className={`kind-card ${kind === o.k ? 'on' : ''}`} onClick={() => pick(o.k)}>
+              <span className={`cell-icon ${o.k === 'SEC' ? 'tone-blue' : 'tone-purple'}`} style={{ width: 36, height: 36, borderRadius: 10 }}><Icon name={o.icon} size={18} /></span>
+              <b>{o.title}</b>
+              <small>{o.text}</small>
+            </button>
+          ))}
+        </div>
+
         <div className="two">
-          <div><label htmlFor="nu">{t('ad.o.nameEn')}</label><input id="nu" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('ad.o.newUnitPh')} required /></div>
+          <div><label htmlFor="nu">{t('ad.o.nameEn')}</label><input id="nu" value={name} onChange={(e) => setName(e.target.value)} placeholder={kind === 'SEC' ? t('ad.o.newSecPh') : t('ad.o.newUnitPh')} required autoFocus /></div>
           <div><label htmlFor="nub">{t('ad.o.nameBn')}</label><input id="nub" value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('ad.o.nameBnPh')} /></div>
         </div>
         <p className="muted" style={{ marginTop: -4 }}>{t('ad.o.nameHint')}</p>
-        <div>
-          <label htmlFor="np">{t('ad.o.belongsUnder')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label>
-          <select id="np" value={parentId} onChange={(e) => setParentId(e.target.value)}>
-            <option value="">{t('ad.o.topLevel')}</option>
-            {d.units.filter((u) => u.isActive).map((u) => <option key={u.id} value={u.id}>{unitName(u)}</option>)}
-          </select>
-        </div>
+
+        {kind === 'SEC' ? (
+          <div className="two">
+            <div>
+              <label htmlFor="np">{t('ad.o.belongsUnder')}</label>
+              <select id="np" value={parentId} onChange={(e) => setParentId(e.target.value)} required>
+                {d.units.filter((u) => u.isActive).map((u) => <option key={u.id} value={u.id}>{unitName(u)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="ns">{t('ad.o.secretary')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label>
+              <select id="ns" value={secretary} onChange={(e) => setSecretary(e.target.value)}>
+                <option value="">{t('ad.o.notSetCap')}</option>
+                {people.map((m) => <option key={m.id} value={m.id}>{personName(m)}</option>)}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="np">{t('ad.o.belongsUnder')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label>
+            <select id="np" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+              <option value="">{t('ad.o.topLevel')}</option>
+              {d.units.filter((u) => u.isActive).map((u) => <option key={u.id} value={u.id}>{unitName(u)}</option>)}
+            </select>
+          </div>
+        )}
+
+        <p className="muted" style={{ margin: 0, fontSize: 13 }}>{kind === 'SEC' ? t('ad.o.afterSec') : t('ad.o.afterDept')}</p>
         <Err msg={error} />
         <div className="row" style={{ justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose}>{t('c.cancel')}</button>
-          <button className="primary" disabled={busy || !name.trim()}>{busy ? t('ad.o.creating') : t('ad.o.createUnit')}</button>
+          <button className="primary" disabled={busy || !name.trim() || (kind === 'SEC' && !parentId)}>{busy ? t('ad.o.creating') : kind === 'SEC' ? t('ad.o.createSec') : t('ad.o.createUnit')}</button>
         </div>
       </form>
     </Modal>

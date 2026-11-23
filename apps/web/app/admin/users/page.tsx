@@ -150,10 +150,12 @@ export default function Users() {
           user={current}
           data={data}
           onClose={() => setSelected(null)}
-          onSaved={async (id) => {
+          onSaved={async () => {
+            // After saving (or deactivating / deleting) the panel closes and the list shows the result.
             await data.reload();
-            if (id) setSelected(id);
+            setSelected(null);
           }}
+          onCreated={() => data.reload()}
         />
       )}
     </>
@@ -162,7 +164,7 @@ export default function Users() {
 
 // ---------- drawer: create / edit ----------
 
-function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: OrgData; onClose: () => void; onSaved: (newId?: string) => Promise<void> }) {
+function UserDrawer({ user, data, onClose, onSaved, onCreated }: { user?: AdminUser; data: OrgData; onClose: () => void; onSaved: (newId?: string) => Promise<void>; onCreated: () => Promise<unknown> }) {
   const { me } = useAuth();
   const { t, err, personName } = useI18n();
   const toast = useToast();
@@ -179,7 +181,9 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [modal, setModal] = useState<null | 'reset' | 'deactivate'>(null);
+  const [modal, setModal] = useState<null | 'reset' | 'deactivate' | 'delete'>(null);
+  // People added in this sitting, so their temporary passwords can still be copied after the form is cleared.
+  const [added, setAdded] = useState<{ name: string; email: string; password: string }[]>([]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !document.querySelector('.modal') && onClose();
@@ -196,7 +200,6 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
     setError('');
     if (!name.trim()) return setError(t('ad.u.errName'));
     if (creating && !email.trim()) return setError(t('ad.u.errEmail'));
-    if (showPositions && rows.length === 0) return setError(t('ad.u.errPos'));
     setBusy(true);
     try {
       if (creating) {
@@ -211,7 +214,17 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
           positions: isAdmin ? undefined : rowsToPayload(rows),
         });
         toast.ok(t('ad.u.added', { name: personName(u) }));
-        await onSaved(u.id);
+        setAdded((a) => [{ name: personName(u), email: email.trim(), password }, ...a]);
+        // Ready for the next person: personal fields are cleared, the position, department and language stay.
+        setName('');
+        setNameBn('');
+        setPhone('');
+        setEmail('');
+        setPassword(generatePassword());
+        setIsAdmin(false);
+        await onCreated();
+        document.querySelector('.drawer-b')?.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('u-name')?.focus();
       } else {
         await api(`/users/${user!.id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim(), nameBn: nameBn.trim(), phone: phone.trim() }) });
         if (showPositions) await api(`/users/${user!.id}/positions`, { method: 'PATCH', body: JSON.stringify({ positions: rowsToPayload(rows) }) });
@@ -242,12 +255,27 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
         </div>
 
         <div className="drawer-b">
+          {creating && added.length > 0 && (
+            <section className="added-box">
+              <div className="sec-title">{t('ad.u.addedTitle')} <span>{added.length}</span></div>
+              <p className="muted" style={{ margin: '0 0 8px', fontSize: 13 }}>{t('ad.u.addedHint')}</p>
+              {added.map((a, i) => (
+                <div key={i} className="added-row">
+                  <div style={{ minWidth: 0 }}>
+                    <b>{a.name}</b>
+                    <div className="muted" style={{ fontSize: 12.5, overflowWrap: 'anywhere' }}>{a.email} · <span className="mono">{a.password}</span></div>
+                  </div>
+                  <button type="button" className="sm" onClick={() => navigator.clipboard?.writeText(`${a.email}  ${a.password}`).then(() => toast.ok(t('ad.u.pwCopied')))}>{t('c.copy')}</button>
+                </div>
+              ))}
+            </section>
+          )}
           <section>
             <div className="sec-title">{t('ad.u.profile')}</div>
             <div className="two">
-              <div><label htmlFor="u-name">{t('ad.u.fullNameEn')}</label><input id="u-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus={creating} /></div>
-              <div><label htmlFor="u-name-bn">{t('ad.u.fullNameBn')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label><input id="u-name-bn" value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('ad.u.fullNameBnPh')} /></div>
-              <div><label htmlFor="u-phone">{t('ad.u.phone')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label><input id="u-phone" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+              <div><label htmlFor="u-name">{t('ad.u.fullNameEn')}</label><input id="u-name" name="np-name" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} autoFocus={creating} /></div>
+              <div><label htmlFor="u-name-bn">{t('ad.u.fullNameBn')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label><input id="u-name-bn" name="np-name-bn" autoComplete="off" value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('ad.u.fullNameBnPh')} /></div>
+              <div><label htmlFor="u-phone">{t('ad.u.phone')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label><input id="u-phone" name="np-phone" autoComplete="off" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
               {creating && (
                 <>
                   <div style={{ gridColumn: '1 / -1' }}><label htmlFor="u-email">{t('ad.u.email')}</label><input id="u-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" /></div>
@@ -311,6 +339,15 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
                     <button className={user!.isActive ? 'danger' : ''} onClick={() => setModal('deactivate')}>{user!.isActive ? t('ad.u.deactBtn') : t('ad.u.reactBtn')}</button>
                   </div>
                 )}
+                {user!.id !== me?.id && (
+                  <div className="row between" style={{ borderTop: '1px solid var(--red-bg)', paddingTop: 12 }}>
+                    <div>
+                      <b>{t('ad.u.delTitle')}</b>
+                      <div className="muted">{t('ad.u.delText')}</div>
+                    </div>
+                    <button className="danger" onClick={() => setModal('delete')}>{t('c.delete')}…</button>
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -320,12 +357,36 @@ function UserDrawer({ user, data, onClose, onSaved }: { user?: AdminUser; data: 
           <Err msg={error} />
           <span className="grow" />
           {!creating && !dirty && <span className="muted">{t('c.noChanges')}</span>}
-          <button onClick={onClose}>{dirty && !creating ? t('c.discard') : t('c.close')}</button>
+          <button onClick={onClose}>{dirty && !creating ? t('c.discard') : creating && added.length > 0 ? t('ad.u.done') : t('c.close')}</button>
           <button className="primary" disabled={busy || !dirty} onClick={save}>{busy ? t('c.saving') : creating ? t('ad.u.createBtn') : t('c.saveChanges')}</button>
         </div>
       </aside>
 
       {modal === 'reset' && user && <ResetModal user={user} onClose={() => setModal(null)} />}
+      {modal === 'delete' && user && (
+        <Modal title={t('ad.u.delModal', { name: personName(user) })} onClose={() => setModal(null)}>
+          <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>{t('ad.u.delModalText')}</p>
+          <div className="row" style={{ justifyContent: 'flex-end' }}>
+            <button onClick={() => setModal(null)}>{t('c.cancel')}</button>
+            <button
+              className="danger"
+              onClick={async () => {
+                try {
+                  await api(`/users/${user.id}`, { method: 'DELETE' });
+                  toast.ok(t('ad.u.deletedToast'));
+                  setModal(null);
+                  await onSaved();
+                } catch (e: any) {
+                  toast.error(err(e.message));
+                  setModal(null);
+                }
+              }}
+            >
+              {t('c.delete')}
+            </button>
+          </div>
+        </Modal>
+      )}
       {modal === 'deactivate' && user && (
         <Modal title={user.isActive ? t('ad.u.deactModal', { name: personName(user) }) : t('ad.u.reactModal', { name: personName(user) })} onClose={() => setModal(null)}>
           <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>{user.isActive ? t('ad.u.deactModalText') : t('ad.u.reactModalText')}</p>

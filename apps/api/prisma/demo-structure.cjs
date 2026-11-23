@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 async function main() {
   const pos = async (title) => (await prisma.position.findUniqueOrThrow({ where: { title } })).id;
   const unit = await prisma.unit.findFirstOrThrow({ where: { name: 'Head Office' } });
-  const dhaka = await prisma.unit.findFirstOrThrow({ where: { name: 'Dhaka Unit' } });
+  const dhaka = await prisma.unit.findFirstOrThrow({ where: { name: 'Dhaka Department' } });
   const user = async (name) => prisma.user.findFirstOrThrow({ where: { name } });
 
   // positions: heads are limited to their own team; add the missing "Secretariat Member"

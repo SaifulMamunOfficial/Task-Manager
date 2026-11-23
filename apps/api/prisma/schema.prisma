@@ -73,6 +73,8 @@ model Position {
   id             String                 @id @default(cuid())
   // A head (secretary, divisional director) may give tasks only to people of their OWN division / team.
   ownTeamOnly    Boolean                @default(false)
+  // Not tied to any department or secretariat (Director, Assistant Director): the person sits at the head office.
+  orgWide        Boolean                @default(false)
   title          String                 @unique
   titleBn        String?
   level          Int                    @default(10)
@@ -96,6 +98,9 @@ model User {
   language           String   @default("bn")
   notifyEmail        Boolean  @default(true)
   notifyPush         Boolean  @default(true)
+  // Profile picture: object key in storage, and a counter that changes whenever the picture does (cache busting).
+  avatarKey          String?
+  avatarVer          Int      @default(0)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

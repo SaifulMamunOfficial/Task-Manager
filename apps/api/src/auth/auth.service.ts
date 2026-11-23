@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.module';
+import { AuditService } from '../common/audit.module';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -13,6 +14,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private audit: AuditService,
   ) {}
 
   private async issueTokens(user: { id: string; isAdmin: boolean }) {
@@ -77,6 +79,19 @@ export class AuthService {
     await this.prisma.user.update({ where: { id: userId }, data: { language } });
   }
 
+  /** The person edits their own name and phone (email is their sign-in, only an admin changes it). */
+  async updateProfile(userId: string, data: { name?: string; nameBn?: string; phone?: string }) {
+    const before = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true, nameBn: true, phone: true } });
+    const next = {
+      ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+      ...(data.nameBn !== undefined ? { nameBn: data.nameBn.trim() || null } : {}),
+      ...(data.phone !== undefined ? { phone: data.phone.trim() || null } : {}),
+    };
+    await this.prisma.user.update({ where: { id: userId }, data: next });
+    await this.audit.log(userId, 'UPDATE_PROFILE', 'User', userId, before, next);
+    return this.me(userId);
+  }
+
   me(userId: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
@@ -91,6 +106,7 @@ export class AuthService {
         language: true,
         notifyEmail: true,
         notifyPush: true,
+        avatarVer: true,
         positions: {
           select: {
             id: true,

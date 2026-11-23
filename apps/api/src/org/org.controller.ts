@@ -20,6 +20,7 @@ class UpdateUnitDto {
 class PositionDto {
   @IsString() @MinLength(1) title: string;
   @IsOptional() @IsBoolean() ownTeamOnly?: boolean;
+  @IsOptional() @IsBoolean() orgWide?: boolean;
   @IsOptional() @IsString() titleBn?: string;
   @IsOptional() @IsInt() level?: number;
 }
@@ -89,6 +90,25 @@ export class OrgController {
     const unit = await this.prisma.unit.update({ where: { id }, data: dto });
     await this.audit.log(me.id, 'UPDATE', 'Unit', id, before, unit);
     return unit;
+  }
+
+  /** Only an empty one can go: nobody in it, no secretariats, nothing under it. Otherwise deactivate it. */
+  @AdminOnly()
+  @Delete('units/:id')
+  async deleteUnit(@CurrentUser() me: AuthUser, @Param('id') id: string) {
+    const unit = await this.prisma.unit.findUniqueOrThrow({ where: { id } });
+    if (unit.type === 'HEAD_OFFICE') throw new ConflictException('The head office cannot be deleted');
+    const [people, secretariats, children] = await Promise.all([
+      this.prisma.userPosition.count({ where: { unitId: id } }),
+      this.prisma.secretariat.count({ where: { unitId: id } }),
+      this.prisma.unit.count({ where: { parentId: id } }),
+    ]);
+    if (people > 0) throw new ConflictException('Department still has people');
+    if (secretariats > 0) throw new ConflictException('Department still has secretariats');
+    if (children > 0) throw new ConflictException('Department still has branches under it');
+    await this.prisma.unit.delete({ where: { id } });
+    await this.audit.log(me.id, 'DELETE', 'Unit', id, unit);
+    return { ok: true };
   }
 
   @AdminOnly()

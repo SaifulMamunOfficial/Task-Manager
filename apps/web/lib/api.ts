@@ -1,4 +1,4 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
+export const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api';
 
 const store = {
   get: (k: string) => (typeof window === 'undefined' ? null : localStorage.getItem(k)),

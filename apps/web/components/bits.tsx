@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
-import { post } from '../lib/api';
+import { BASE, post } from '../lib/api';
 import { STATUS_TONE } from '../lib/ui';
 import { useI18n } from '../lib/i18n';
 import { Icon, StatusGlyph, type IconName } from './icons';
@@ -30,11 +30,12 @@ const AVATAR_COLORS = ['#5b6b8c', '#7a6a58', '#4f7a6c', '#8a5f6c', '#6a6f9a', '#
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 /** Initials in a muted, stable colour per person. */
-export function Avatar({ name, large }: { name: string; large?: boolean; small?: boolean }) {
+export function Avatar({ name, large, id, ver, size }: { name: string; large?: boolean; small?: boolean; id?: string; ver?: number; size?: number }) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+  const dim = size ? { width: size, height: size, fontSize: Math.round(size * 0.36) } : {};
   return (
-    <span className={`avatar ${large ? 'lg' : ''}`} style={{ background: AVATAR_COLORS[hash(name) % AVATAR_COLORS.length] }} aria-hidden="true">
-      {initials}
+    <span className={`avatar ${large ? 'lg' : ''}`} style={{ background: AVATAR_COLORS[hash(name) % AVATAR_COLORS.length], ...dim }} aria-hidden="true">
+      {id && ver ? <img src={`${BASE}/avatar/${id}?v=${ver}`} alt="" className="avatar-img" /> : initials}
     </span>
   );
 }

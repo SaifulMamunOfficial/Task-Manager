@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { IsEmail, IsIn, IsString, MinLength } from 'class-validator';
+import { Body, Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
+import { IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 import { AuthUser, CurrentUser, Public } from './decorators';
 
@@ -12,6 +12,11 @@ class RefreshDto {
 }
 class LanguageDto {
   @IsIn(['bn', 'en']) language: string;
+}
+class ProfileDto {
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(100) name?: string;
+  @IsOptional() @IsString() @MaxLength(100) nameBn?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
 }
 class ChangePasswordDto {
   @IsString() currentPassword: string;
@@ -46,6 +51,11 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.auth.me(user.id);
+  }
+
+  @Patch('profile')
+  profile(@CurrentUser() user: AuthUser, @Body() dto: ProfileDto) {
+    return this.auth.updateProfile(user.id, dto);
   }
 
   @HttpCode(204)

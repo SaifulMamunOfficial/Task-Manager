@@ -48,6 +48,9 @@ export default function PositionsEditor({ rows, onChange, units, positions, user
   const makePrimary = (i: number) => onChange(rows.map((r, j) => ({ ...r, isPrimary: j === i })));
   const bosses = users.filter((u) => u.isActive && !u.isAdmin && u.id !== selfId);
   const unitOf = (id: string) => units.find((u) => u.id === id);
+  const headId = (units.find((u) => u.type === 'HEAD_OFFICE') ?? units[0])?.id ?? '';
+  const isWide = (positionId: string) => !!positions.find((p) => p.id === positionId)?.orgWide;
+  const pickPosition = (i: number, positionId: string) => set(i, isWide(positionId) ? { positionId, secretariatId: '', unitId: headId } : { positionId });
 
   const toSecretariat = (i: number) => {
     const first = secretariats[0];
@@ -59,18 +62,28 @@ export default function PositionsEditor({ rows, onChange, units, positions, user
       {rows.length === 0 && <div className="muted">{t('pe.noPositions')}</div>}
       {rows.map((r, i) => {
         const inSec = !!r.secretariatId;
+        const wide = isWide(r.positionId);
         return (
           <div key={i} className="pos-card">
             <div style={{ marginBottom: 10 }}>
+              <label>{t('pe.position')}</label>
+              <select value={r.positionId} onChange={(e) => pickPosition(i, e.target.value)}>
+                {positions.map((p) => (
+                  <option key={p.id} value={p.id}>{posTitle(p)}</option>
+                ))}
+              </select>
+              {wide && <div className="muted" style={{ marginTop: 4 }}>{t('pe.wideNote')}</div>}
+            </div>
+            {!wide && <div style={{ marginBottom: 10 }}>
               <label>{t('pe.worksIn')}</label>
               <div className="seg" role="radiogroup" aria-label={t('pe.worksIn')}>
                 <button type="button" role="radio" aria-checked={!inSec} className={!inSec ? 'on' : ''} onClick={() => set(i, { secretariatId: '' })}>{t('pe.modeUnit')}</button>
                 <button type="button" role="radio" aria-checked={inSec} className={inSec ? 'on' : ''} disabled={secretariats.length === 0} onClick={() => !inSec && toSecretariat(i)}>{t('pe.modeSec')}</button>
               </div>
               {secretariats.length === 0 && <div className="muted" style={{ marginTop: 4 }}>{t('pe.noDivisions')}</div>}
-            </div>
+            </div>}
             <div className="two">
-              <div>
+              {!wide && <div>
                 <label>{inSec ? t('pe.secretariat') : t('pe.unit')}</label>
                 {inSec ? (
                   <select value={r.secretariatId} onChange={(e) => { const s = secretariats.find((x) => x.id === e.target.value); set(i, { secretariatId: e.target.value, unitId: s?.unitId ?? r.unitId }); }}>
@@ -86,15 +99,7 @@ export default function PositionsEditor({ rows, onChange, units, positions, user
                     ))}
                   </select>
                 )}
-              </div>
-              <div>
-                <label>{t('pe.position')}</label>
-                <select value={r.positionId} onChange={(e) => set(i, { positionId: e.target.value })}>
-                  {positions.map((p) => (
-                    <option key={p.id} value={p.id}>{posTitle(p)}</option>
-                  ))}
-                </select>
-              </div>
+              </div>}
               <div>
                 <label>{t('pe.reportsTo')}</label>
                 <select value={r.reportsToUserId} onChange={(e) => set(i, { reportsToUserId: e.target.value })}>

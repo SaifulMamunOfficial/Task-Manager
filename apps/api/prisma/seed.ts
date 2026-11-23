@@ -24,7 +24,7 @@ async function main() {
   for (const p of DEFAULT_POSITIONS) {
     // Secretaries and unit heads may give tasks only inside their own division.
     const head = ['Secretary', 'Unit Head'].includes(p.title);
-    await prisma.position.upsert({ where: { title: p.title }, update: { titleBn: p.titleBn }, create: { ...p, ownTeamOnly: head } });
+    await prisma.position.upsert({ where: { title: p.title }, update: { titleBn: p.titleBn }, create: { ...p, ownTeamOnly: head, orgWide: ['Director', 'Assistant Director'].includes(p.title) } });
   }
 
   // 4) Default delegation matrix (admin can change it later)

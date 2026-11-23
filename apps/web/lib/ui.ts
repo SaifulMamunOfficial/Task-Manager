@@ -1,6 +1,6 @@
 export type PosRef = { id: string; title: string; titleBn?: string | null; level: number };
-export type Position = { id: string; isPrimary: boolean; secretariatId?: string | null; unit: { id: string; name: string }; position: PosRef };
-export type Me = { id: string; name: string; nameBn?: string | null; email: string; isAdmin: boolean; mustChangePassword: boolean; language: 'bn' | 'en'; positions: Position[] };
+export type Position = { id: string; isPrimary: boolean; secretariatId?: string | null; secretariat?: { id: string; name: string; nameBn?: string | null } | null; unit: { id: string; name: string }; position: PosRef };
+export type Me = { id: string; name: string; nameBn?: string | null; phone?: string | null; avatarVer?: number; email: string; isAdmin: boolean; mustChangePassword: boolean; language: 'bn' | 'en'; positions: Position[] };
 export type Brief = { id: string; name: string; nameBn?: string | null };
 
 // Colour of the status pill. Labels come from the language dictionary (`status.<STATUS>`).

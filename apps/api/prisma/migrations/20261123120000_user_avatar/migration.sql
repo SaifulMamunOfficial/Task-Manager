@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "avatarKey" TEXT,
+ADD COLUMN "avatarVer" INTEGER NOT NULL DEFAULT 0;
