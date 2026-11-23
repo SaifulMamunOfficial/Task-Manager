@@ -4,7 +4,7 @@ import { api, post } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { useI18n } from '../../../lib/i18n';
 import { useOrgData, type AdminUser } from '../../../lib/orgdata';
-import { Avatar, Err, PageHead, Skeleton } from '../../../components/bits';
+import { Avatar, Err, PageHead, Skeleton, StatCard } from '../../../components/bits';
 import { Icon } from '../../../components/icons';
 import { Modal } from '../../../components/Modal';
 import { useToast } from '../../../components/toast';
@@ -62,13 +62,12 @@ export default function Users() {
       />
       <Err msg={data.error ? err(data.error) : ''} />
 
-      {(stats.noPosition > 0 || stats.noManager > 0) && (
-        <div className="notice" role="status" style={{ flexWrap: 'wrap' }}>
-          <Icon name="alert" />
-          {stats.noPosition > 0 && <span>{t('ad.ov.noPos')}: <b>{n(stats.noPosition)}</b></span>}
-          {stats.noManager > 0 && <span>{t('ad.u.noMgr')}: <b>{n(stats.noManager)}</b></span>}
-        </div>
-      )}
+      <div className="stats">
+        <StatCard label={t('ad.ov.people')} value={n(stats.active)} icon="users" tone="blue" />
+        <StatCard label={t('ad.u.deactivated')} value={n(stats.inactive)} icon="user" tone="gray" />
+        <StatCard label={t('ad.ov.noPos')} value={n(stats.noPosition)} icon="alert" tone={stats.noPosition ? 'amber' : 'green'} />
+        <StatCard label={t('ad.u.noMgr')} value={n(stats.noManager)} icon="alert" tone={stats.noManager ? 'amber' : 'green'} />
+      </div>
 
       <div className="toolbar">
         <div className="search">
@@ -86,7 +85,7 @@ export default function Users() {
         <div className="seg" role="radiogroup" aria-label={t('ad.u.statusLabel')}>
           {(['active', 'inactive', 'all'] as const).map((s) => (
             <button key={s} role="radio" aria-checked={status === s} className={status === s ? 'on' : ''} onClick={() => setStatus(s)}>
-              {s === 'active' ? t('ad.u.fActive') : s === 'inactive' ? t('ad.u.fInactive') : t('ad.u.fAll')}{' '}<span className="muted" style={{ fontSize: 12 }}>{n(s === 'active' ? stats.active : s === 'inactive' ? stats.inactive : stats.active + stats.inactive)}</span>
+              {s === 'active' ? t('ad.u.fActive') : s === 'inactive' ? t('ad.u.fInactive') : t('ad.u.fAll')}
             </button>
           ))}
         </div>
