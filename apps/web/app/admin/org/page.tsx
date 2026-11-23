@@ -14,7 +14,7 @@ type OrgData = ReturnType<typeof useOrgData>;
 
 export default function Org() {
   const d = useOrgData();
-  const { t, n, posTitle, err, lang } = useI18n();
+  const { t, n, posTitle, err, lang, unitName } = useI18n();
   const [openUnit, setOpenUnit] = useState<string | null>(null);
   const [modal, setModal] = useState<null | { kind: 'unit' } | { kind: 'position'; position?: Pos }>(null);
   const [showInactive, setShowInactive] = useState(false);
@@ -78,8 +78,8 @@ export default function Org() {
                     <div className="ucell-user">
                       <span className={`cell-icon ${u.type === 'HEAD_OFFICE' ? 'tone-blue' : 'tone-purple'}`} style={{ width: 38, height: 38, borderRadius: 10 }}><Icon name="building" size={18} /></span>
                       <div style={{ minWidth: 0 }}>
-                        <div className="nm">{u.name}</div>
-                        <div className="em">{u.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : parent ? t('ad.o.under', { name: parent.name }) : t('ad.o.unitBranch')}</div>
+                        <div className="nm">{unitName(u)}</div>
+                        <div className="em">{u.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : parent ? t('ad.o.under', { name: unitName(parent) }) : t('ad.o.unitBranch')}</div>
                       </div>
                     </div>
                     <div className="row" style={{ gap: 8, flexWrap: 'nowrap' }}>
@@ -94,7 +94,7 @@ export default function Org() {
                     </div>
                     <div className="tagrow">
                       {secs.length === 0 && <span className="muted">{t('c.none')}</span>}
-                      {secs.map((s) => <span key={s.id} className="tagchip">{s.name}</span>)}
+                      {secs.map((s) => <span key={s.id} className="tagchip">{unitName(s)}</span>)}
                     </div>
                     <div>{u.isActive ? <span className="pill green">{t('ad.o.active')}</span> : <span className="pill gray">{t('ad.o.inactive')}</span>}</div>
                     <button className="ghost sm" tabIndex={-1} aria-label={t('ad.o.open', { name: u.name })} style={{ padding: '0 8px' }}><Icon name="chevron" size={16} /></button>
@@ -153,12 +153,14 @@ export default function Org() {
 
 function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () => void }) {
   const toast = useToast();
-  const { t, n, posTitle, err } = useI18n();
+  const { t, n, posTitle, err, unitName } = useI18n();
   const [name, setName] = useState(unit.name);
+  const [nameBn, setNameBn] = useState(unit.nameBn ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [confirm, setConfirm] = useState<null | 'toggle' | { sec: string; name: string }>(null);
   const [secName, setSecName] = useState('');
+  const [secNameBn, setSecNameBn] = useState('');
   const [secUser, setSecUser] = useState('');
 
   useEffect(() => {
@@ -170,8 +172,8 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
   const secs = d.secretariats.filter((s) => s.unitId === unit.id);
   const members = d.users.filter((u) => u.isActive && !u.isAdmin && u.positions.some((p) => p.unit.id === unit.id));
   const parent = d.units.find((u) => u.id === unit.parentId);
-  const dirty = name.trim() !== unit.name;
-  const sub = unit.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : parent ? t('ad.o.under', { name: parent.name }) : t('ad.o.unitBranch');
+  const dirty = name.trim() !== unit.name || nameBn.trim() !== (unit.nameBn ?? '');
+  const sub = unit.type === 'HEAD_OFFICE' ? t('ad.o.headOffice') : parent ? t('ad.o.under', { name: unitName(parent) }) : t('ad.o.unitBranch');
 
   async function run(fn: () => Promise<unknown>, ok: string) {
     setError('');
@@ -193,11 +195,11 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
   return (
     <>
       <div className="drawer-scrim" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-modal="true" aria-label={t('ad.o.unitAria', { name: unit.name })}>
+      <aside className="drawer" role="dialog" aria-modal="true" aria-label={t('ad.o.unitAria', { name: unitName(unit) })}>
         <div className="drawer-h">
           <span className={`cell-icon ${unit.type === 'HEAD_OFFICE' ? 'tone-blue' : 'tone-purple'}`} style={{ width: 42, height: 42 }}><Icon name="building" size={20} /></span>
           <div className="grow">
-            <h1 style={{ fontSize: 18 }}>{unit.name}</h1>
+            <h1 style={{ fontSize: 18 }}>{unitName(unit)}</h1>
             <div className="muted">{sub}</div>
           </div>
           {unit.isActive ? <span className="pill green">{t('ad.o.active')}</span> : <span className="pill gray">{t('ad.o.inactive')}</span>}
@@ -207,8 +209,11 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
         <div className="drawer-b">
           <section>
             <div className="sec-title">{t('ad.o.details')}</div>
-            <label htmlFor="un">{t('ad.o.name')}</label>
-            <input id="un" value={name} onChange={(e) => setName(e.target.value)} />
+            <div className="two">
+              <div><label htmlFor="un">{t('ad.o.nameEn')}</label><input id="un" value={name} onChange={(e) => setName(e.target.value)} /></div>
+              <div><label htmlFor="unb">{t('ad.o.nameBn')}</label><input id="unb" value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('ad.o.nameBnPh')} /></div>
+            </div>
+            <p className="muted" style={{ marginTop: 6 }}>{t('ad.o.nameHint')}</p>
           </section>
 
           <section>
@@ -219,10 +224,10 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
               return (
                 <div key={s.id} className="file" style={{ background: 'var(--surface)' }}>
                   <span className="grow">
-                    <b>{s.name}</b>
+                    <b>{unitName(s)}</b>
                     <div className="muted" style={{ fontSize: 12.5 }}>{t('ad.o.secretaryIs', { name: sec?.name ?? t('ad.o.notSet') })}</div>
                   </span>
-                  <button className="danger sm" onClick={() => setConfirm({ sec: s.id, name: s.name })}>{t('c.delete')}</button>
+                  <button className="danger sm" onClick={() => setConfirm({ sec: s.id, name: unitName(s) })}>{t('c.delete')}</button>
                 </div>
               );
             })}
@@ -232,11 +237,12 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!secName.trim()) return;
-                const ok = await run(() => post('/secretariats', { name: secName.trim(), unitId: unit.id, secretaryUserId: secUser || undefined }), t('ad.o.secAdded'));
-                if (ok) { setSecName(''); setSecUser(''); }
+                const ok = await run(() => post('/secretariats', { name: secName.trim(), nameBn: secNameBn.trim() || undefined, unitId: unit.id, secretaryUserId: secUser || undefined }), t('ad.o.secAdded'));
+                if (ok) { setSecName(''); setSecNameBn(''); setSecUser(''); }
               }}
             >
-              <div className="grow"><label htmlFor="sn">{t('ad.o.newSec')}</label><input id="sn" placeholder={t('ad.o.name')} value={secName} onChange={(e) => setSecName(e.target.value)} /></div>
+              <div className="grow"><label htmlFor="sn">{t('ad.o.newSec')}</label><input id="sn" placeholder={t('ad.o.nameEn')} value={secName} onChange={(e) => setSecName(e.target.value)} /></div>
+              <div className="grow"><label htmlFor="snb">{t('ad.o.nameBn')}</label><input id="snb" placeholder={t('ad.o.nameBnPh')} value={secNameBn} onChange={(e) => setSecNameBn(e.target.value)} /></div>
               <div style={{ width: 170 }}>
                 <label htmlFor="ss">{t('ad.o.secretary')}</label>
                 <select id="ss" value={secUser} onChange={(e) => setSecUser(e.target.value)}>
@@ -284,7 +290,7 @@ function UnitDrawer({ unit, d, onClose }: { unit: Unit; d: OrgData; onClose: () 
           <span className="grow" />
           {!dirty && <span className="muted">{t('c.noChanges')}</span>}
           <button onClick={onClose}>{dirty ? t('c.discard') : t('c.close')}</button>
-          <button className="primary" disabled={busy || !dirty || !name.trim()} onClick={() => run(() => api(`/units/${unit.id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim() }) }), t('ad.o.renamed'))}>
+          <button className="primary" disabled={busy || !dirty || !name.trim()} onClick={() => run(() => api(`/units/${unit.id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim(), nameBn: nameBn.trim() }) }), t('ad.o.renamed'))}>
             {t('c.saveChanges')}
           </button>
         </div>
@@ -320,6 +326,8 @@ function NewUnitModal({ d, onClose, onCreated }: { d: OrgData; onClose: () => vo
   const toast = useToast();
   const { t, err } = useI18n();
   const [name, setName] = useState('');
+  const [nameBn, setNameBn] = useState('');
+  const { unitName } = useI18n();
   const [parentId, setParentId] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -329,7 +337,7 @@ function NewUnitModal({ d, onClose, onCreated }: { d: OrgData; onClose: () => vo
     setBusy(true);
     setError('');
     try {
-      const u = await post('/units', { name: name.trim(), type: 'UNIT', parentId: parentId || undefined });
+      const u = await post('/units', { name: name.trim(), nameBn: nameBn.trim() || undefined, type: 'UNIT', parentId: parentId || undefined });
       toast.ok(t('ad.o.unitCreated'));
       await d.reload();
       onCreated(u.id);
@@ -342,12 +350,16 @@ function NewUnitModal({ d, onClose, onCreated }: { d: OrgData; onClose: () => vo
   return (
     <Modal title={t('ad.o.newUnitTitle')} onClose={onClose}>
       <form className="stack" onSubmit={go}>
-        <div><label htmlFor="nu">{t('ad.o.name')}</label><input id="nu" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('ad.o.newUnitPh')} required /></div>
+        <div className="two">
+          <div><label htmlFor="nu">{t('ad.o.nameEn')}</label><input id="nu" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('ad.o.newUnitPh')} required /></div>
+          <div><label htmlFor="nub">{t('ad.o.nameBn')}</label><input id="nub" value={nameBn} onChange={(e) => setNameBn(e.target.value)} placeholder={t('ad.o.nameBnPh')} /></div>
+        </div>
+        <p className="muted" style={{ marginTop: -4 }}>{t('ad.o.nameHint')}</p>
         <div>
           <label htmlFor="np">{t('ad.o.belongsUnder')} <span className="muted" style={{ fontWeight: 400 }}>{t('c.optional')}</span></label>
           <select id="np" value={parentId} onChange={(e) => setParentId(e.target.value)}>
             <option value="">{t('ad.o.topLevel')}</option>
-            {d.units.filter((u) => u.isActive).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            {d.units.filter((u) => u.isActive).map((u) => <option key={u.id} value={u.id}>{unitName(u)}</option>)}
           </select>
         </div>
         <Err msg={error} />

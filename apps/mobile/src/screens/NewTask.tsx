@@ -20,7 +20,7 @@ function endOfDay(offsetDays: number) {
 }
 
 export default function NewTask() {
-  const { t, n, err, posTitle, date } = useI18n();
+  const { t, n, err, posTitle, date, unitName } = useI18n();
   const { me } = useAuth();
   const nav = useNavigation<any>();
   const [title, setTitle] = useState('');
@@ -131,7 +131,7 @@ export default function NewTask() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               <Chip label={t('nw.anyPos')} on={!fromPos} onPress={() => setFromPos('')} />
               {me!.positions.map((p) => (
-                <Chip key={p.id} label={`${posTitle(p.position)} · ${p.unit.name}`} on={fromPos === p.position.id} onPress={() => setFromPos(p.position.id)} />
+                <Chip key={p.id} label={`${posTitle(p.position)} · ${unitName(p.unit)}`} on={fromPos === p.position.id} onPress={() => setFromPos(p.position.id)} />
               ))}
             </View>
           </View>
@@ -199,10 +199,10 @@ export default function NewTask() {
 }
 
 export function PeoplePicker({ visible, people, allowed, value, onChange, onClose }: { visible: boolean; people: Person[]; allowed: (u: Person) => boolean; value: string[]; onChange: (ids: string[]) => void; onClose: () => void }) {
-  const { t, posTitle } = useI18n();
+  const { t, posTitle, unitName } = useI18n();
   const [q, setQ] = useState('');
   const list = people
-    .filter((u) => (u.name + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name).join(' ')).toLowerCase().includes(q.toLowerCase()))
+    .filter((u) => (u.name + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name + (p.unit.nameBn ?? '')).join(' ')).toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => Number(allowed(b)) - Number(allowed(a)) || a.name.localeCompare(b.name));
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -233,7 +233,7 @@ export function PeoplePicker({ visible, people, allowed, value, onChange, onClos
                 <Avatar name={u.name} size={34} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: '700', color: C.ink }}>{u.name}</Text>
-                  <Text style={{ color: C.sub, fontSize: 13 }} numberOfLines={1}>{u.positions.map((p) => `${posTitle(p.position)}, ${p.unit.name}`).join(' · ')}</Text>
+                  <Text style={{ color: C.sub, fontSize: 13 }} numberOfLines={1}>{u.positions.map((p) => `${posTitle(p.position)}, ${unitName(p.unit)}`).join(' · ')}</Text>
                   {!ok && <Text style={{ color: C.amber, fontSize: 12 }}>{t('pp.blocked')}</Text>}
                 </View>
                 <Icon name={on ? 'checkmark-circle' : 'ellipse-outline'} size={24} color={on ? C.brand : '#cbd5e1'} />

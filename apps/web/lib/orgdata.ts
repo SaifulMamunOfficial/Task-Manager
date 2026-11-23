@@ -2,9 +2,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from './api';
 
-export type Unit = { id: string; name: string; type: 'HEAD_OFFICE' | 'UNIT'; parentId: string | null; isActive: boolean };
+export type Unit = { id: string; name: string; nameBn?: string | null; type: 'HEAD_OFFICE' | 'UNIT'; parentId: string | null; isActive: boolean };
 export type Pos = { id: string; title: string; titleBn?: string | null; level: number };
-export type Secretariat = { id: string; name: string; secretaryUserId: string | null; unitId: string };
+export type Secretariat = { id: string; name: string; nameBn?: string | null; secretaryUserId: string | null; unitId: string };
 export type AdminUser = {
   id: string;
   name: string;
@@ -13,7 +13,7 @@ export type AdminUser = {
   isActive: boolean;
   isAdmin: boolean;
   language?: string;
-  positions: { id: string; isPrimary: boolean; reportsToUserId: string | null; secretariatId: string | null; unit: { id: string; name: string }; position: Pos }[];
+  positions: { id: string; isPrimary: boolean; reportsToUserId: string | null; secretariatId: string | null; unit: { id: string; name: string; nameBn?: string | null }; position: Pos }[];
 };
 
 /** Everything the admin screens need, loaded together and refreshable. */

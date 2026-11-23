@@ -94,7 +94,7 @@ export class AuthService {
           select: {
             id: true,
             isPrimary: true,
-            unit: { select: { id: true, name: true } },
+            unit: { select: { id: true, name: true, nameBn: true } },
             position: { select: { id: true, title: true, titleBn: true, level: true } },
             reportsToUserId: true,
             secretariatId: true,

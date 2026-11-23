@@ -28,7 +28,7 @@ const QUICK = [
 
 export default function NewTask() {
   const { me } = useAuth();
-  const { t, fmtSize, posTitle, err } = useI18n();
+  const { t, fmtSize, posTitle, err, unitName } = useI18n();
   const router = useRouter();
   const toast = useToast();
   const [assignees, setAssignees] = useState<string[]>([]);
@@ -101,7 +101,7 @@ export default function NewTask() {
               <select value={fromPosition} onChange={(e) => setFromPosition(e.target.value)} style={{ width: 'auto' }} aria-label={t('nw.givingAsLabel')}>
                 <option value="">{t('nw.anyPos')}</option>
                 {myPositions.map((p) => (
-                  <option key={p.id} value={p.position.id}>{posTitle(p.position)}, {p.unit.name}</option>
+                  <option key={p.id} value={p.position.id}>{posTitle(p.position)}, {unitName(p.unit)}</option>
                 ))}
               </select>
             </div>

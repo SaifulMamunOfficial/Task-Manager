@@ -58,6 +58,7 @@ enum Platform {
 model Unit {
   id           String         @id @default(cuid())
   name         String
+  nameBn       String?
   type         UnitType       @default(UNIT)
   parentId     String?
   parent       Unit?          @relation("UnitTree", fields: [parentId], references: [id])
@@ -136,6 +137,7 @@ model UserPosition {
 model Secretariat {
   id              String         @id @default(cuid())
   name            String
+  nameBn          String?
   unitId          String
   unit            Unit           @relation(fields: [unitId], references: [id])
   secretaryUserId String?

@@ -46,7 +46,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 
 export default function Account() {
   const { me, logout } = useAuth();
-  const { t, n, err, posTitle } = useI18n();
+  const { t, n, err, posTitle, unitName } = useI18n();
   const nav = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [p, setP] = useState<Prefs | null>(null);
@@ -123,7 +123,7 @@ export default function Account() {
                 <View style={s.rolePill}>
                   <Icon name="briefcase-outline" size={13} color={C.brand} />
                   <Text style={{ color: C.brand, fontWeight: '700', fontSize: 12.5 }} numberOfLines={1}>
-                    {posTitle(first.position)} · {first.unit.name}
+                    {posTitle(first.position)} · {unitName(first.unit)}
                   </Text>
                 </View>
               )}

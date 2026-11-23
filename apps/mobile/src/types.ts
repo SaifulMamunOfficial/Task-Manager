@@ -1,6 +1,6 @@
 export type Lang = 'bn' | 'en';
 export type PosRef = { id: string; title: string; titleBn?: string | null; level: number };
-export type Position = { id: string; isPrimary: boolean; unit: { id: string; name: string }; position: PosRef };
+export type Position = { id: string; isPrimary: boolean; unit: { id: string; name: string; nameBn?: string | null }; position: PosRef };
 export type Me = { id: string; name: string; email: string; isAdmin: boolean; mustChangePassword: boolean; language: Lang; positions: Position[] };
 export type Brief = { id: string; name: string };
 
@@ -29,7 +29,7 @@ export type Detail = {
   chain: null | { summary?: { total: number; approved: number; open: number; overdue: number }; rows?: { id: string; depth: number; status: string; progress: number; due: string | null; title: string; assignee: string; givenBy: string }[] };
 };
 export type Notif = { id: string; type: string; payload: any; readAt: string | null; createdAt: string };
-export type Person = { id: string; name: string; positions: { position: PosRef; unit: { name: string } }[] };
+export type Person = { id: string; name: string; positions: { position: PosRef; unit: { name: string; nameBn?: string | null } }[] };
 export type Prefs = {
   notifyEmail: boolean;
   notifyPush: boolean;

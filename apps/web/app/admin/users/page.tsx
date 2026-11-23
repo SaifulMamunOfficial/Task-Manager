@@ -22,7 +22,7 @@ function generatePassword() {
 
 export default function Users() {
   const data = useOrgData();
-  const { t, n, posTitle, err } = useI18n();
+  const { t, n, posTitle, err, unitName } = useI18n();
   const [selected, setSelected] = useState<string | 'new' | null>(null);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState<StatusFilter>('active');
@@ -76,7 +76,7 @@ export default function Users() {
         </div>
         <select value={unit} onChange={(e) => setUnit(e.target.value)} style={{ width: 'auto' }} aria-label={t('ad.u.filterUnit')}>
           <option value="">{t('ad.u.allUnits')}</option>
-          {data.units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+          {data.units.map((u) => <option key={u.id} value={u.id}>{unitName(u)}</option>)}
         </select>
         <select value={position} onChange={(e) => setPosition(e.target.value)} style={{ width: 'auto' }} aria-label={t('ad.u.filterPos')}>
           <option value="">{t('ad.u.allPositions')}</option>
@@ -126,7 +126,7 @@ export default function Users() {
                   {!u.isAdmin && u.positions.length === 0 && <span className="muted">{t('ad.u.noPosition')}</span>}
                   {u.positions.map((p) => (
                     <span key={p.id} className={`tagchip ${p.isPrimary && u.positions.length > 1 ? 'primary' : ''}`} title={p.isPrimary && u.positions.length > 1 ? t('ad.u.primaryTitle') : undefined}>
-                      <b>{posTitle(p.position)}</b> {p.unit.name}
+                      <b>{posTitle(p.position)}</b> {unitName(p.unit)}
                     </span>
                   ))}
                 </div>

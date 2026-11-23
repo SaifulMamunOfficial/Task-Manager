@@ -40,6 +40,8 @@ function useBuild(lang: Lang) {
 
     const statusLabel = (s: string) => t(`status.${s}`);
     const posTitle = (p: TitleLike) => (lang === 'bn' && p.titleBn ? p.titleBn : p.title);
+    /** Name of a unit or secretariat in the reader's language (falls back to the English name). */
+    const unitName = (u: { name: string; nameBn?: string | null }) => (lang === 'bn' && u.nameBn ? u.nameBn : u.name);
 
     /** Human deadline: "3 days overdue", "Today, 5:00 PM", "Tomorrow", "Wed 26 Nov". */
     const dueInfo = (due?: string | null, status?: string): { text: string; tone: 'late' | 'soon' | 'ok' | 'none' } => {
@@ -105,7 +107,7 @@ function useBuild(lang: Lang) {
 
     const err = (m: string) => translateError(m, lang);
 
-    return { lang, locale, n, t, has, date, dateTime, time, weekday, statusLabel, posTitle, dueInfo, timeAgo, fmtSize, notifText, err };
+    return { lang, locale, n, t, has, date, dateTime, time, weekday, statusLabel, posTitle, unitName, dueInfo, timeAgo, fmtSize, notifText, err };
   }, [lang]);
 }
 

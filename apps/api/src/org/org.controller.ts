@@ -7,11 +7,13 @@ import { AdminOnly, AuthUser, CurrentUser } from '../auth/decorators';
 
 class CreateUnitDto {
   @IsString() @MinLength(1) name: string;
+  @IsOptional() @IsString() nameBn?: string;
   @IsOptional() @IsEnum(UnitType) type?: UnitType;
   @IsOptional() @IsString() parentId?: string;
 }
 class UpdateUnitDto {
   @IsOptional() @IsString() @MinLength(1) name?: string;
+  @IsOptional() @IsString() nameBn?: string;
   @IsOptional() @IsString() parentId?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }
@@ -22,6 +24,7 @@ class PositionDto {
 }
 class SecretariatDto {
   @IsString() @MinLength(1) name: string;
+  @IsOptional() @IsString() nameBn?: string;
   @IsString() unitId: string;
   @IsOptional() @IsString() secretaryUserId?: string;
 }
@@ -41,7 +44,7 @@ export class OrgController {
       where: { isActive: true },
       orderBy: { name: 'asc' },
       include: {
-        secretariats: { select: { id: true, name: true, secretaryUserId: true } },
+        secretariats: { select: { id: true, name: true, nameBn: true, secretaryUserId: true } },
         members: {
           where: { user: { isActive: true } },
           select: {

@@ -71,7 +71,7 @@ const publicUser = {
       isPrimary: true,
       reportsToUserId: true,
       secretariatId: true,
-      unit: { select: { id: true, name: true } },
+      unit: { select: { id: true, name: true, nameBn: true } },
       position: { select: { id: true, title: true, titleBn: true, level: true } },
     },
   },

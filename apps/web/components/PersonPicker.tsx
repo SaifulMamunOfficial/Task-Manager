@@ -6,7 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { Avatar } from './bits';
 import { Icon } from './icons';
 
-type U = { id: string; name: string; positions: { position: { id: string; title: string; titleBn?: string | null }; unit: { name: string } }[] };
+type U = { id: string; name: string; positions: { position: { id: string; title: string; titleBn?: string | null }; unit: { name: string; nameBn?: string | null } }[] };
 type Rule = { fromPositionId: string; toPositionId: string };
 
 /**
@@ -29,7 +29,7 @@ export default function PersonPicker({ value, onChange, fromPositionId }: { valu
   const allowed = (u: U) => rules.some((r) => myPositionIds.includes(r.fromPositionId) && u.positions.some((p) => p.position.id === r.toPositionId));
 
   const list = users
-    .filter((u) => u.id !== me?.id && (u.name + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name).join(' ')).toLowerCase().includes(q.toLowerCase()))
+    .filter((u) => u.id !== me?.id && (u.name + ' ' + u.positions.map((p) => p.position.title + (p.position.titleBn ?? '') + p.unit.name + (p.unit.nameBn ?? '')).join(' ')).toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => Number(allowed(b)) - Number(allowed(a)) || a.name.localeCompare(b.name));
 
   const toggle = (u: U) => {

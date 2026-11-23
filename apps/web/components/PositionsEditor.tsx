@@ -39,7 +39,7 @@ type Props = {
 
 /** One card per position the person holds (Secretary + Unit Head, etc.). */
 export default function PositionsEditor({ rows, onChange, units, positions, users, secretariats, selfId }: Props) {
-  const { t, posTitle } = useI18n();
+  const { t, posTitle, unitName } = useI18n();
   const set = (i: number, patch: Partial<Row>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const makePrimary = (i: number) => onChange(rows.map((r, j) => ({ ...r, isPrimary: j === i })));
   const bosses = users.filter((u) => u.isActive && !u.isAdmin && u.id !== selfId);
@@ -54,7 +54,7 @@ export default function PositionsEditor({ rows, onChange, units, positions, user
               <label>{t('pe.unit')}</label>
               <select value={r.unitId} onChange={(e) => set(i, { unitId: e.target.value, secretariatId: '' })}>
                 {units.filter((u) => u.isActive || u.id === r.unitId).map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
+                  <option key={u.id} value={u.id}>{unitName(u)}</option>
                 ))}
               </select>
             </div>
@@ -80,7 +80,7 @@ export default function PositionsEditor({ rows, onChange, units, positions, user
               <select value={r.secretariatId} onChange={(e) => set(i, { secretariatId: e.target.value })}>
                 <option value="">{t('c.none')}</option>
                 {secretariats.filter((s) => s.unitId === r.unitId).map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                  <option key={s.id} value={s.id}>{unitName(s)}</option>
                 ))}
               </select>
             </div>
