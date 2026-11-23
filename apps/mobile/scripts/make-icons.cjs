@@ -19,7 +19,7 @@ const mark = fs.readFileSync(path.join(assets, 'logo-mark.svg'));
     .composite([{ input: small, gravity: 'center' }])
     .png()
     .toFile(path.join(assets, 'adaptive-icon.png'));
-  // splash screen mark (white on transparent; the splash background colour comes from app.json)
+  // splash screen mark (transparent; the splash background colour comes from app.json)
   await sharp(mark).resize(512, 512).png().toFile(path.join(assets, 'splash-icon.png'));
   // small in-app logo for the sign-in screen
   await sharp(mark).resize(256, 256).png().toFile(path.join(assets, 'logo-mark.png'));

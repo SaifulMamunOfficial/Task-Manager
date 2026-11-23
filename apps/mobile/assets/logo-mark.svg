@@ -1,16 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <!-- the mark alone (white on transparent), for the splash screen, the Android adaptive icon and in-app use -->
-  <g stroke="#ffffff" stroke-width="70" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <path d="M292 548 L440 696 L744 340"/>
-  </g>
-  <g fill="#ffffff">
-    <circle cx="292" cy="548" r="74"/>
-    <circle cx="440" cy="696" r="74"/>
-    <circle cx="744" cy="340" r="74"/>
-  </g>
-  <g fill="#4f46e5">
-    <circle cx="292" cy="548" r="26"/>
-    <circle cx="440" cy="696" r="26"/>
-    <circle cx="744" cy="340" r="26"/>
-  </g>
+  <!-- the mark alone (no square), for the splash screen and the Android adaptive icon -->
+  <defs>
+    <linearGradient id="giver" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a5b4fc"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="taker" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5eead4"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <clipPath id="right"><circle cx="612" cy="512" r="236"/></clipPath>
+  </defs>
+  <circle cx="412" cy="512" r="236" fill="url(#giver)"/>
+  <circle cx="612" cy="512" r="236" fill="url(#taker)"/>
+  <circle cx="412" cy="512" r="236" fill="#ffffff" clip-path="url(#right)"/>
+  <path d="M448 520 L492 566 L578 458" fill="none" stroke="#4338ca" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

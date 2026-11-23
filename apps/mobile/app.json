@@ -29,7 +29,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4f46e5"
+        "backgroundColor": "#312e81"
       }
     },
     "extra": {
@@ -41,7 +41,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#4f46e5"
+      "backgroundColor": "#312e81"
     },
     "web": {
       "favicon": "./assets/favicon.png"
